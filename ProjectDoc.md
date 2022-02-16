@@ -10,6 +10,12 @@ Please keep this updated as you work.*
 | **Feb 25** | RL checkpoint |
 | **Mar 18** | Written project |
 
+----------
+# *TODO*
+- Code A-star search algorithm
+- Code Q-learning strategy
+- Add game code
+- Run tests
 
 
 ---------------
