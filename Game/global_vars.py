@@ -30,17 +30,17 @@ DOT_COLORS    = ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"]
 
 # this will be changed throughout the program
 GAME_VARS = {
-    "actual_color":     None,
-    "backtrack_index":  None,
-    "clock":            None,
-    "connected_colors": None,
-    "final_position":   None,
-    "grid_array":       None,
-    "solve_value":      None,
-    "solved_index":     None,
-    "start_position":   None,
-    "tries":            None,
-    "visited_cells":    None
+    "actual_color":     "",
+    "backtrack_index":  0,
+    "clock":            0,
+    "connected_colors": [],
+    "final_position":   [],
+    "grid_array":       [],
+    "solve_value":      0,
+    "solved_index":     0,
+    "start_position":   [],
+    "tries":            0,
+    "visited_cells":    []
 }
 
 # this includes items that are within the game window
@@ -54,4 +54,14 @@ GAME_TEXT = {
     "moves_value": "",
     "cant_solve":  ""
 }
+""" ------------------------------------ """
+
+
+""" Init Global
+        Initialize the global variables.
+"""
+def init_global():
+    global GAME_VARS, GAME_WINDOW, GAME_VARS, DOT_COLORS, CANT_SOLVE, RUNNING, PROGRAM_NAME, GRID_SIZE, GRID_WIDTH, \
+           GRID_HEIGHT, WINDOW_HEIGHT, WINDOW_WIDTH, FONT_SM, FONT_LG, FONT, FPS, \
+           BLACK, GREY, WHITE, YELLOW, GREEN, CYAN, BLUE, PURPLE, RED
 """ ------------------------------------ """

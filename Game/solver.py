@@ -23,9 +23,9 @@ def solver(start_position, level_file):
 """ Old Solver ----------------------------------
         This is an existing solver for reference.
 """
-def old_solver(start_position, level_file):
-    if (g.GAME_VARS["current_position"][0] == g.GAME_VARS["final_position"][0]
-            and g.GAME_VARS["current_position"][1] == g.GAME_VARS["final_position"][1]):
+def old_solver(current_position, level_file):
+    if (current_position[0] == g.GAME_VARS["final_position"][0]
+            and current_position[1] == g.GAME_VARS["final_position"][1]):
         if g.GAME_VARS["solved_index"] < len(g.DOT_COLORS) - 1:
             g.GAME_VARS["solved_index"] += 1
 
@@ -43,34 +43,34 @@ def old_solver(start_position, level_file):
             game.load_level(level_file)
         return
 
-    options = find_possible_options(g.GAME_VARS["current_position"])
+    options = find_possible_options(current_position)
 
     if len(options) != 0:
         option = random.choice(options)
         g.GAME_VARS["grid_array"][option[0]][option[1]] = g.GAME_VARS["actual_color"]
-        pygame.draw.circle(g.GAME_WINDOW["grid_surface"], game.parse_color_from_json(g.GAME_VARS["actual_color"]),
+        pygame.draw.circle(g.GAME_WINDOW["grid_surface"], game.parse_color(g.GAME_VARS["actual_color"]),
                            (option[1] * 60 + 30, option[0] * 60 + 30), 25)
         g.GAME_VARS["bacltrack_index"] = 0
 
     else:
         if len(g.GAME_VARS["visited_cells"]) != 0:
-            if g.GAME_VARS["current_position"] == start_position:
+            if current_position == g.GAME_VARS["start_position"]:
                 game.load_level(level_file)
                 g.GAME_VARS["tries"] += 1
                 return
 
-            g.GAME_VARS["grid_array"][g.GAME_VARS["current_position"][0]][g.GAME_VARS["current_position"][1]] = ""
+            g.GAME_VARS["grid_array"][current_position[0]][current_position[1]] = ""
             pygame.draw.circle(g.GAME_WINDOW["grid_surface"], g.GREY,
-                               (g.GAME_VARS["current_position"][1] * 60 + 30, g.GAME_VARS["current_position"][0] * 60 + 30), 25)
+                               (current_position[1] * 60 + 30, current_position[0] * 60 + 30), 25)
             g.GAME_VARS["backtrack_index"] -= 1
             option = g.GAME_VARS["visited_cells"][g.GAME_VARS["backtrack_index"]]
         else:
             print("CANNOT SOLVE THAT LEVEL")
             return
 
-    game.generate_fonts()
+    game.gen_fonts()
     pygame.display.flip()
-    old_solver(option)
+    old_solver(option, level_file)
     return
 """ ------------------------------------ """
 

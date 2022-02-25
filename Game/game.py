@@ -20,17 +20,18 @@ TO_RUN = "test.json"
 """
 def main_program(level_file):
 
+    g.init_global()
     init_game(level_file)
-    gen_fonts()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            g.RUNNING = True
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            click_button(level_file)
-
-    pygame.display.flip()
-    g.GAME_VARS["clock"].tick(g.FPS)
+    while g.RUNNING:
+        gen_fonts()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                g.RUNNING = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                click_button(level_file)
+        pygame.display.flip()
+        g.GAME_VARS["clock"].tick(g.FPS)
 """ ------------------------------------ """
 
 
@@ -42,6 +43,7 @@ def init_game(level_file):
     # initialize the game window
     pygame.init()
     pygame.display.set_caption(g.PROGRAM_NAME)
+    g.GAME_VARS["clock"] = pygame.time.Clock()
     g.FONT_LG = pygame.font.SysFont(g.FONT, 28)
     g.FONT_SM = pygame.font.SysFont(g.FONT, 16)
 
@@ -56,18 +58,13 @@ def init_game(level_file):
 """
 def load_level(level_file):
 
-    # initialize all game variables
-    g.GAME_VARS["actual_color"]     = ""
-    g.GAME_VARS["backtrack_index"]  = 0
-    g.GAME_VARS["clock"]            = pygame.time.Clock()
-    g.GAME_VARS["connected_colors"] = []
-    g.GAME_VARS["final_position"]   = []
-    g.GAME_VARS["grid_array"]       = numpy.empty((g.GRID_SIZE[0], g.GRID_SIZE[1]), dtype="U10")
-    g.GAME_VARS["solve_value"]      = 0
-    g.GAME_VARS["solved_index"]     = 0
-    g.GAME_VARS["start_position"]   = []
-    g.GAME_VARS["tries"]            = 0
-    g.GAME_VARS["visited_cells"]    = []
+    # initialize game variables
+    g.GAME_VARS["actual_color"]    = ""
+    g.GAME_VARS["backtrack_index"] = 0
+    g.GAME_VARS["grid_array"]      = numpy.empty((g.GRID_SIZE[0], g.GRID_SIZE[1]), dtype="U10")
+    g.GAME_VARS["solve_value"]     = 0
+    g.GAME_VARS["solved_index"]    = 0
+    g.GAME_VARS["visited_cells"]   = []
 
     # set window
     surface = pygame.display.set_mode((g.WINDOW_WIDTH, g.WINDOW_HEIGHT))
@@ -139,7 +136,7 @@ def click_button(level_file):
     # solve button
     elif 550 > mouse_pos[0] > 400 and 270 > mouse_pos[1] > 240:
         while g.GAME_VARS["solve_value"] == 0:
-            s.solve(g.GAME_VARS["start_position"], level_file)
+            s.solver(g.GAME_VARS["start_position"], level_file)
 """ ------------------------------------ """
 
 
