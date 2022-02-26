@@ -3,17 +3,17 @@ import random
 import numpy
 
 from global_vars import get_val
+
 """ Solver ----------------------------------------
     This file contains the original solvers.
     Solver code is taken from Github project:
     https://github.com/hreso110100/FlowFree-Solver
 """
 
-
-
 """ Solve """
-def solve(game, current_position):
 
+
+def solve(game, current_position):
     if current_position[0] == game.final_position[0] and current_position[1] == game.final_position[1]:
         if game.solved_index < len(game.colors) - 1:
             game.solved_index += 1
@@ -60,22 +60,26 @@ def solve(game, current_position):
     pygame.display.flip()
     solve(game, option)
     return
+
+
 """ ------------------ """
 
-
-
 """ Check Full Board """
+
+
 def check_full_board(game) -> bool:
     for x in range(game.grid_size[0]):
         for y in range(game.grid_size[1]):
             if game.grid_array[x][y] == "":
                 return False
     return True
+
+
 """ ---------------- """
 
-
-
 """ Find Possible Options """
+
+
 def find_possible_options(game, position):
     options = []
 
@@ -133,4 +137,6 @@ def find_possible_options(game, position):
             options.append([position[0] - 1, position[1]])
 
     return options
+
+
 """ --------------------- """
