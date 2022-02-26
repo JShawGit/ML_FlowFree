@@ -4,7 +4,7 @@ import numpy
 
 from global_vars import get_val
 """ Solver ----------------------------------------
-    This file contains the RL and original solvers.
+    This file contains the original solvers.
     Solver code is taken from Github project:
     https://github.com/hreso110100/FlowFree-Solver
 """
