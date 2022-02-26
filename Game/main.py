@@ -4,8 +4,8 @@ from global_vars import get_val
 import solver as s
 import game as g
 
-""" Global Vars ----------------------------------------
-    This file contains global variables for the program.
+""" Main -------------------------------------
+    This file is the main file of the program.
     Game code is based on Github project:
     https://github.com/hreso110100/FlowFree-Solver
 """
