@@ -23,7 +23,7 @@ class Node:
 
     # Compare Nodes
     def __eq__(self, other):
-        return self.position == other.position
+        return self.position[0] == other.position[0] and self.position[1] == other.position[1]
 
     # Sort Nodes
     #def __lt__(self, other):
@@ -64,20 +64,53 @@ def a_search(game):
         if current_node.position[0] == final_node.position[0] \
                 and current_node.position[1] == final_node.position[1]:
             path = []
+
             while current_node != start_node:
                 path.append(current_node.position)
                 current_node = current_node.parent
-                game.solve_value = 1
+                #game.solve_value =
             # Return reversed path
-            return path[::-1]
+            path = path[::-1]
+
+            # Updating game with solution
+
+            game.connected_colors.append(game.current_color)
+            game.colors.remove(game.current_color)
+
+            # Checking to see if we have solved for all colors
+            if len(game.colors) > 0:
+                game.current_color = game.colors[0]
+            else:
+                game.solve_value = 1
+                return None
+
+            game.start_position = numpy.argwhere(game.grid_array == game.current_color).tolist()[0]
+            game.final_position = numpy.argwhere(game.grid_array == game.current_color).tolist()[1]
+            game.visited_cells.extend(path)
+
+            # Resetting Game for next colored dot
+            open.clear()
+            closed.clear()
+
+            start_node = Node(game.start_position, None)
+            final_node = Node(game.final_position, None)
+            open.append(start_node)
+
+            current_node = open.pop()
+
+            draw_on_grid(game, current_node)
+
+            closed.append(current_node)
+
+
 
         (x, y) = current_node.position
 
-        neighbor_states = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+        neighbor_states = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
 
         for next_state in neighbor_states:
             # Check if next nodes are out of grid
-            if next_state[0] > game.grid_size[0]-1 or next_state[1] > game.grid_size[1]-1 or next_state[0] < 0 or next_state[1] < 0:
+            if skip_neighbor(game,next_state):
                 continue
 
             neighbor_state = Node(next_state, current_node)
@@ -134,6 +167,16 @@ def open_add(neighbor_state,open,game):
 
     return True
 
+
+def skip_neighbor(game,next_state):
+    if next_state[0] > game.grid_size[0] - 1 or next_state[1] > game.grid_size[1] - 1 or next_state[0] < 0 or \
+            next_state[1] < 0:
+        return True
+
+    if next_state in game.visited_cells:
+        return True
+
+    return False
 
 
 
