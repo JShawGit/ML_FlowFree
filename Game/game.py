@@ -20,21 +20,36 @@ class Game:
             Initializes a game 'object'.
     """
     def __init__(self, file):
+        # initialize game
         pygame.init()
+        pygame.display.set_caption(get_val("title"))
+        icon = pygame.image.load(get_val("icon"))
+        pygame.display.set_icon(icon)
 
         # game variables
-        self.actual_color     = ""
-        self.backtrack_index  = 0
         self.clock            = pygame.time.Clock()
-        self.connected_colors = []
-        self.current_level    = file
-        self.final_position   = []
-        self.game_array       = []
+        self.file             = file
+        self.grid_array       = []
         self.running          = True
-        self.solve_value      = 0
-        self.solved_index     = 0
-        self.start_position   = []
+
+        # file variables
+        self.colors      = []
+        self.name        = ""
+        self.grid_size   = [0, 0]
+        self.grid_window = [0, 0]
+        self.grid_mult   = 60
+
+        # solver variables
+        self.current_color     = ""
         self.tries            = 0
+        self.backtrack_index  = 0
+        self.solved_index     = 0
+        self.solve_value      = 0
+
+        # solver lists
+        self.start_position   = []
+        self.final_position   = []
+        self.connected_colors = []
         self.visited_cells    = []
 
         # window variables
@@ -43,52 +58,62 @@ class Game:
 
         # text variables
         self.moves_value = ""
-        self.cant_solve  = ""
-        self.font_lg = None
-        self.font_sm = None
+        self.font_lg = pygame.font.SysFont(get_val("font"), get_val("font_sz"))
+        self.font_sm = pygame.font.SysFont(get_val("font"), int(get_val("font_sz")/2))
 
-        pygame.display.set_caption(get_val("title"))
-        self.load_level(file)
+        # load level
+        self.load_level()
     """ ---------------- """
 
 
 
     """ Load a Level From a File """
-    def load_level(self, file):
+    def load_level(self):
         # reset values
-        self.font_lg            = pygame.font.SysFont(get_val("font"), get_val("font_sz"))
-        self.game_array         = numpy.empty(get_val("grid_size"), dtype="U10")
+        self.grid_array         = []
         self.visited_cells      = []
         self.connected_colors   = []
-        self.actual_color       = ""
+        self.current_color       = ""
         self.backtrack_index    = 0
         self.solved_index       = 0
         self.solve_value        = 0
 
-        # regenerate window
-        self.generate_surfaces()
-        self.generate_buttons()
-
         # open level file
-        with open(file) as levels_file:
-            levels_file = json.load(levels_file)
-            level_one = levels_file["levels"][1]
+        with open(self.file) as level:
+            level = json.load(level)
+            self.name = level["name"]
+            self.grid_size = [level["width"], level["height"]]
+            self.grid_window = [self.grid_size[0]*self.grid_mult, self.grid_size[1]*self.grid_mult]
+            self.grid_array  = numpy.empty(self.grid_size, dtype="U10")
+
+            # regenerate window
+            self.generate_surfaces()
+            self.generate_buttons()
+
+            # get colors
+            self.colors = []
+            for color in level["colors"]:
+                self.colors.append(color)
 
             # draw dots
-            for dot in level_one["dots"]:
-                pygame.draw.circle(self.grid_surface, self.parse_color_from_json(dot["color"]), (dot["x"], dot["y"]), 25)
-                self.game_array[dot["index_y"]][dot["index_x"]] = dot["color"]
+            for dot in level["dots"]:
+                x = dot["x"]
+                y = dot["y"]
+                pygame.draw.circle(
+                    self.grid_surface,
+                    self.parse_color_from_json(dot["color"]),
+                    (30 + dot["x"]*60, 30 + dot["y"]*60), 25
+                )
+                self.grid_array[x][y] = dot["color"]
 
             # draw level label
-            text_level_indicator = self.font_lg.render(
-                "LEVEL {id}".format(id=level_one["id"]), False, get_val("cyan")
-            )
-            self.main_surface.blit(text_level_indicator, (430, 0))
+            text_level_indicator = self.font_lg.render("{}".format(self.name), False, get_val("cyan"))
+            self.main_surface.blit(text_level_indicator, (380, 20))
 
         # get starting level values
-        self.actual_color   = get_val("available_colors")[self.solved_index]
-        self.start_position = numpy.argwhere(self.game_array == self.actual_color).tolist()[0]
-        self.final_position = numpy.argwhere(self.game_array == self.actual_color).tolist()[1]
+        self.current_color   = self.colors[self.solved_index]
+        self.start_position = numpy.argwhere(self.grid_array == self.current_color).tolist()[0]
+        self.final_position = numpy.argwhere(self.grid_array == self.current_color).tolist()[1]
         self.visited_cells.append(self.start_position)
     """ ------------------------ """
 
@@ -98,15 +123,15 @@ class Game:
     def generate_surfaces(self):
         # main window
         self.main_surface = pygame.display.set_mode((get_val("window_width"), get_val("window_height")))
-        self.main_surface.fill(get_val("grey"))
+        self.main_surface.fill(get_val("black"))
 
         # game grid
-        self.grid_surface = pygame.Surface((get_val("grid_width"), get_val("grid_height")))
+        self.grid_surface = pygame.Surface((self.grid_window[0], self.grid_window[1]))
         self.grid_surface.fill(get_val("grey"))
 
         # generate grid
-        for x in range(get_val("grid_size")[0]):
-            for y in range(get_val("grid_size")[1]):
+        for x in range(self.grid_size[0]):
+            for y in range(self.grid_size[1]):
                 pygame.draw.rect(self.grid_surface, get_val("cyan"), [60 * y, 60 * x, 60, 60], 1)
     """ ----------------- """
 
@@ -114,22 +139,21 @@ class Game:
 
     """ Generate Buttons """
     def generate_buttons(self):
-        self.font_sm = pygame.font.SysFont(get_val("font"), int(get_val("font_sz")/2))
-
-        # solve button
-        solve_button_text = self.font_sm.render("Solve", False, get_val("purple"))
-        pygame.draw.rect(self.main_surface, get_val("white"), (400, 240, 150, 30))
-        self.main_surface.blit(solve_button_text, (453, 245))
 
         # restart button
         restart_button_text = self.font_sm.render("Restart", False, get_val("white"))
-        pygame.draw.rect(self.main_surface, get_val("purple"), (400, 290, 150, 30))
-        self.main_surface.blit(restart_button_text, (445, 295))
+        pygame.draw.rect(self.main_surface, get_val("cyan"), (400, 195, 150, 30))
+        self.main_surface.blit(restart_button_text, (433, 195))
+
+        # solve button
+        solve_button_text = self.font_sm.render("Solve", False, get_val("purple"))
+        pygame.draw.rect(self.main_surface, get_val("white"), (400, 245, 150, 30))
+        self.main_surface.blit(solve_button_text, (443, 245))
 
         # quit button
         quit_button_text = self.font_sm.render("Quit", False, get_val("purple"))
-        pygame.draw.rect(self.main_surface, get_val("white"), (400, 340, 150, 30))
-        self.main_surface.blit(quit_button_text, (445, 345))
+        pygame.draw.rect(self.main_surface, get_val("white"), (400, 295, 150, 30))
+        self.main_surface.blit(quit_button_text, (450, 295))
     """ ---------------- """
 
 
@@ -155,12 +179,20 @@ class Game:
         # create labels
         text_moves_label = self.font_lg.render("Tries", False, get_val("white"))
         text_moves_value = self.font_lg.render(str(self.tries), False, get_val("purple"))
-        self.cant_solve  = self.font_lg.render("CANNOT SOLVE !", False, get_val("red"))
+
+        ww = get_val("window_width")
+        wh = get_val("window_width")
+
+        gw = self.grid_window[0]
+        gh = self.grid_window[1]
+
+        w = int((ww-gw)/(self.grid_size[0]*2))
+        h = int((wh-gh)/(self.grid_size[1]*2))
 
         # set labels
-        self.main_surface.blit(self.grid_surface, (10, 10))
-        self.main_surface.blit(text_moves_label,  (400, 50))
-        self.main_surface.blit(text_moves_value,  (500, 50))
+        self.main_surface.blit(self.grid_surface, (w, h))
+        self.main_surface.blit(text_moves_label,  (415, 80))
+        self.main_surface.blit(text_moves_value,  (460, 125))
     """ -------------- """
 
 

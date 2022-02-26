@@ -10,7 +10,7 @@ import game as g
     https://github.com/hreso110100/FlowFree-Solver
 """
 
-GAME_FILE = 'levels/levels.json'
+GAME_FILE = 'levels/4x4.json'
 
 """ Main ----------------------------------
         This is the main program's function
@@ -43,19 +43,19 @@ def handle_click_buttons(game):
     mouse_position = pygame.mouse.get_pos()
 
     # restart button click handling
-    if 550 > mouse_position[0] > 400 and 320 > mouse_position[1] > 290:
-        tries = 0
-        game.load_level(game.current_level)
-
-    # exit button click handling
-    elif 550 > mouse_position[0] > 400 and 370 > mouse_position[1] > 340:
-        print("Game exited!")
-        exit(0)
+    if 550 > mouse_position[0]   > 400 and 225 > mouse_position[1] > 195:
+        game.tries = 0
+        game.load_level()
 
     # solve level button click handling
-    elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 240:
+    elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
         while game.solve_value == 0:
             s.solve(game, game.start_position)
+
+    # exit button click handling
+    elif 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
+        print("Game exited!")
+        exit(0)
 """ -------------------- """
 
 

@@ -1,0 +1,42 @@
+{
+  "name": "3x3 Test",
+  "width":  3,
+  "height": 3,
+  "colors": [
+    "RED",
+    "BLUE",
+    "YELLOW"
+  ],
+  "dots": [
+    {
+      "color": "RED",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "color": "RED",
+      "x": 0,
+      "y": 2
+    },
+    {
+      "color": "BLUE",
+      "x": 1,
+      "y": 0
+    },
+    {
+      "color": "BLUE",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "color": "YELLOW",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "color": "YELLOW",
+      "x": 2,
+      "y": 2
+    }
+  ]
+}

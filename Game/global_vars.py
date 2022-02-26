@@ -7,7 +7,7 @@
 """ ------------------------------------ """
 VARS = {
     # colors
-    "black":  (0,   0,   0),
+    "black":  (6,   18,  24),
     "grey":   (38,  50,  56),
     "white":  (255, 255, 255),
     "yellow": (255, 234, 0),
@@ -18,13 +18,10 @@ VARS = {
     "red":    (211, 47,  47),
 
     # game constants, change for different results
-    "available_colors": ["RED", "BLUE", "GREEN", "PURPLE", "YELLOW"],
-    "grid_width":       360,
-    "grid_height":      360,
-    "grid_size":        [6, 6],
-    "font":             "impact",
-    "font_sz":          28,
+    "font":             "arialblack",
+    "font_sz":          40,
     "fps":              60,
+    "icon":             "assets/icon.png",
     "title":            "Flow Free RL Project",
     "window_width":     600,
     "window_height":    400,
