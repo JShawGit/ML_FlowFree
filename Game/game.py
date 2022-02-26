@@ -1,166 +1,168 @@
-# external libraries
+from global_vars import get_val
 import pygame
 import numpy
 import json
 
-# written programs
-import global_vars as g
-import solver as s
-"""
-    Game code referenced from Github Flow Free repository:
+""" Game -------------------------------------
+    This file contains the FlowFree game code.
+    Game code is based on Github project:
     https://github.com/hreso110100/FlowFree-Solver
 """
 
-# test file to run, change this
-TO_RUN = "test.json"
 
-
-""" Main Program --------------------------
-        Run this to run the entire program.
+""" Game Class
+        This contains all of the game-data and functions.
+        It runs the game itself.
 """
-def main_program(level_file):
+class Game:
 
-    g.init_global()
-    init_game(level_file)
+    """ Initialize Class
+            Initializes a game 'object'.
+    """
+    def __init__(self, file):
+        pygame.init()
 
-    while g.RUNNING:
-        gen_fonts()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                g.RUNNING = True
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                click_button(level_file)
-        pygame.display.flip()
-        g.GAME_VARS["clock"].tick(g.FPS)
-""" ------------------------------------ """
+        # game variables
+        self.actual_color     = ""
+        self.backtrack_index  = 0
+        self.clock            = pygame.time.Clock()
+        self.connected_colors = []
+        self.current_level    = file
+        self.final_position   = []
+        self.game_array       = []
+        self.running          = True
+        self.solve_value      = 0
+        self.solved_index     = 0
+        self.start_position   = []
+        self.tries            = 0
+        self.visited_cells    = []
 
+        # window variables
+        self.main_surface = None
+        self.grid_surface = None
 
+        # text variables
+        self.moves_value = ""
+        self.cant_solve  = ""
+        self.font_lg = None
+        self.font_sm = None
 
-""" Init Game ----------------------------------------------
-        Initializes the Flow Free game with a specifc level.
-"""
-def init_game(level_file):
-    # initialize the game window
-    pygame.init()
-    pygame.display.set_caption(g.PROGRAM_NAME)
-    g.GAME_VARS["clock"] = pygame.time.Clock()
-    g.FONT_LG = pygame.font.SysFont(g.FONT, 28)
-    g.FONT_SM = pygame.font.SysFont(g.FONT, 16)
-
-    # load game interface
-    load_level(level_file)
-""" ------------------------------------ """
-
-
-
-""" Load Level
-        Loads a level from a file.
-"""
-def load_level(level_file):
-
-    # initialize game variables
-    g.GAME_VARS["actual_color"]    = ""
-    g.GAME_VARS["backtrack_index"] = 0
-    g.GAME_VARS["grid_array"]      = numpy.empty((g.GRID_SIZE[0], g.GRID_SIZE[1]), dtype="U10")
-    g.GAME_VARS["solve_value"]     = 0
-    g.GAME_VARS["solved_index"]    = 0
-    g.GAME_VARS["visited_cells"]   = []
-
-    # set window
-    surface = pygame.display.set_mode((g.WINDOW_WIDTH, g.WINDOW_HEIGHT))
-    surface.fill(g.CYAN)
-    g.GAME_WINDOW["main_surface"] = surface
-
-    # set grid
-    surface = pygame.Surface((g.GRID_WIDTH, g.GRID_HEIGHT))
-    surface.fill(g.GREY)
-    g.GAME_WINDOW["grid_surface"] = surface
-
-    # solve button
-    button_text = g.FONT_SM.render("Solve", False, g.PURPLE)
-    pygame.draw.rect(g.GAME_WINDOW["main_surface"], g.WHITE, (400, 240, 150, 30))
-    g.GAME_WINDOW["main_surface"].blit(button_text, (453, 245))
-
-    # restart button
-    button_text = g.FONT_SM.render("Restart", False, g.WHITE)
-    pygame.draw.rect(g.GAME_WINDOW["main_surface"], g.PURPLE, (400, 290, 150, 30))
-    g.GAME_WINDOW["main_surface"].blit(button_text, (445, 295))
-
-    # open this level's json file
-    with open("levels/" + level_file) as file:
-        file = json.load(file)
-        level = file
-
-        for dot in level["dots"]:
-            pygame.draw.circle(g.GAME_WINDOW["grid_surface"], parse_color(dot["color"]), (dot["x"], dot["y"]), 25)
-            g.GAME_VARS["grid_array"][dot["index_y"]][dot["index_x"]] = dot["color"]
-
-        text_level_indicator = g.FONT_LG.render("{id}".format(id=level["name"]), False, g.BLACK)
-        g.GAME_WINDOW["main_surface"].blit(text_level_indicator, (430, 0))
-
-    g.GAME_VARS["actual_color"]   = g.DOT_COLORS[g.GAME_VARS["solved_index"]]
-    g.GAME_VARS["start_position"] = numpy.argwhere(g.GAME_VARS["grid_array"] == g.GAME_VARS["actual_color"]).tolist()[0]
-    g.GAME_VARS["final_position"] = numpy.argwhere(g.GAME_VARS["grid_array"] == g.GAME_VARS["actual_color"]).tolist()[1]
-    g.GAME_VARS["visited_cells"].append(g.GAME_VARS["start_position"])
-""" ------------------------------------ """
+        pygame.display.set_caption(get_val("title"))
+        self.load_level(file)
+    """ ---------------- """
 
 
 
-""" Gen Fonts
-        Generates game overlay fonts.
-"""
-def gen_fonts():
+    """ Load a Level From a File """
+    def load_level(self, file):
+        # reset values
+        self.font_lg            = pygame.font.SysFont(get_val("font"), get_val("font_sz"))
+        self.game_array         = numpy.empty(get_val("grid_size"), dtype="U10")
+        self.visited_cells      = []
+        self.connected_colors   = []
+        self.actual_color       = ""
+        self.backtrack_index    = 0
+        self.solved_index       = 0
+        self.solve_value        = 0
 
-    text_moves_label = g.FONT_LG.render("Tries", False, g.WHITE)
-    g.GAME_TEXT["moves_value"] = g.FONT_LG.render(str(g.GAME_VARS["tries"]), False, g.PURPLE)
-    g.GAME_TEXT["cant_solve"]  = g.FONT_LG.render("CANNOT SOLVE !", False, g.RED)
+        # regenerate window
+        self.generate_surfaces()
+        self.generate_buttons()
 
-    g.GAME_WINDOW["main_surface"].blit(g.GAME_WINDOW["grid_surface"], (10, 10))
-    g.GAME_WINDOW["main_surface"].blit(text_moves_label, (400, 50))
-    g.GAME_WINDOW["main_surface"].blit(g.GAME_TEXT["moves_value"], (500, 50))
-""" ------------------------------------ """
+        # open level file
+        with open(file) as levels_file:
+            levels_file = json.load(levels_file)
+            level_one = levels_file["levels"][1]
 
+            # draw dots
+            for dot in level_one["dots"]:
+                pygame.draw.circle(self.grid_surface, self.parse_color_from_json(dot["color"]), (dot["x"], dot["y"]), 25)
+                self.game_array[dot["index_y"]][dot["index_x"]] = dot["color"]
 
-""" Click Button
-        Activates when a button is clicked
-"""
-def click_button(level_file):
-    # get click location
-    mouse_pos = pygame.mouse.get_pos()
+            # draw level label
+            text_level_indicator = self.font_lg.render(
+                "LEVEL {id}".format(id=level_one["id"]), False, get_val("cyan")
+            )
+            self.main_surface.blit(text_level_indicator, (430, 0))
 
-    # restart button
-    if 550 > mouse_pos[0] > 400 and 320 > mouse_pos[1] > 290:
-        tries = 0
-        load_level(level_file)
-
-    # solve button
-    elif 550 > mouse_pos[0] > 400 and 270 > mouse_pos[1] > 240:
-        while g.GAME_VARS["solve_value"] == 0:
-            s.solver(g.GAME_VARS["start_position"], level_file)
-""" ------------------------------------ """
-
-
-
-""" Parse Color --------------------------------
-        Parse color string to RGB tuple.
-"""
-def parse_color(color):
-    if color == "RED":
-        return g.RED
-    elif color == "GREEN":
-        return g.GREEN
-    elif color == "BLUE":
-        return g.BLUE
-    elif color == "YELLOW":
-        return g.YELLOW
-    elif color == "PURPLE":
-        return g.PURPLE
-""" ------------------------------------ """
+        # get starting level values
+        self.actual_color   = get_val("available_colors")[self.solved_index]
+        self.start_position = numpy.argwhere(self.game_array == self.actual_color).tolist()[0]
+        self.final_position = numpy.argwhere(self.game_array == self.actual_color).tolist()[1]
+        self.visited_cells.append(self.start_position)
+    """ ------------------------ """
 
 
 
-""" ------------------------------------ """
-"""     run if this file is executed     """
-if __name__ == "__main__":
-    main_program(TO_RUN)
-""" ------------------------------------ """
+    """ Generate Surfaces """
+    def generate_surfaces(self):
+        # main window
+        self.main_surface = pygame.display.set_mode((get_val("window_width"), get_val("window_height")))
+        self.main_surface.fill(get_val("grey"))
+
+        # game grid
+        self.grid_surface = pygame.Surface((get_val("grid_width"), get_val("grid_height")))
+        self.grid_surface.fill(get_val("grey"))
+
+        # generate grid
+        for x in range(get_val("grid_size")[0]):
+            for y in range(get_val("grid_size")[1]):
+                pygame.draw.rect(self.grid_surface, get_val("cyan"), [60 * y, 60 * x, 60, 60], 1)
+    """ ----------------- """
+
+
+
+    """ Generate Buttons """
+    def generate_buttons(self):
+        self.font_sm = pygame.font.SysFont(get_val("font"), int(get_val("font_sz")/2))
+
+        # solve button
+        solve_button_text = self.font_sm.render("Solve", False, get_val("purple"))
+        pygame.draw.rect(self.main_surface, get_val("white"), (400, 240, 150, 30))
+        self.main_surface.blit(solve_button_text, (453, 245))
+
+        # restart button
+        restart_button_text = self.font_sm.render("Restart", False, get_val("white"))
+        pygame.draw.rect(self.main_surface, get_val("purple"), (400, 290, 150, 30))
+        self.main_surface.blit(restart_button_text, (445, 295))
+
+        # quit button
+        quit_button_text = self.font_sm.render("Quit", False, get_val("purple"))
+        pygame.draw.rect(self.main_surface, get_val("white"), (400, 340, 150, 30))
+        self.main_surface.blit(quit_button_text, (445, 345))
+    """ ---------------- """
+
+
+
+    """ Parse Color From Json """
+    def parse_color_from_json(self, color):
+        if color == "RED":
+            return get_val("red")
+        elif color == "GREEN":
+            return get_val("green")
+        elif color == "BLUE":
+            return get_val("blue")
+        elif color == "YELLOW":
+            return get_val("yellow")
+        elif color == "PURPLE":
+            return get_val("purple")
+    """ --------------------- """
+
+
+
+    """ Generate Fonts """
+    def generate_fonts(self):
+        # create labels
+        text_moves_label = self.font_lg.render("Tries", False, get_val("white"))
+        text_moves_value = self.font_lg.render(str(self.tries), False, get_val("purple"))
+        self.cant_solve  = self.font_lg.render("CANNOT SOLVE !", False, get_val("red"))
+
+        # set labels
+        self.main_surface.blit(self.grid_surface, (10, 10))
+        self.main_surface.blit(text_moves_label,  (400, 50))
+        self.main_surface.blit(text_moves_value,  (500, 50))
+    """ -------------- """
+
+
+
+    """ ------------------------ """

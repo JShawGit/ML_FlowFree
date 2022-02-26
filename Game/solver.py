@@ -1,151 +1,136 @@
-# external libraries
 import pygame
 import random
 import numpy
 
-# written programs
-import global_vars as g
-import game
-
-""" Solver -------------------------------
-        This is the program's RL solution.
+from global_vars import get_val
+""" Solver ----------------------------------------
+    This file contains the RL and original solvers.
+    Game code is based on Github project:
+    https://github.com/hreso110100/FlowFree-Solver
 """
-def solver(start_position, level_file):
-    old_solver(start_position, level_file)
-""" ------------------------------------ """
 
 
 
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> #
+""" Solve """
+def solve(game, current_position):
 
+    if current_position[0] == game.final_position[0] and current_position[1] == game.final_position[1]:
+        if game.solved_index < len(get_val("available_colors")) - 1:
+            game.solved_index += 1
 
+        game.connected_colors.append(game.actual_color)
+        game.actual_color = get_val("available_colors")[game.solved_index]
+        game.visited_cells = []
+        game.backtrack_index = 0
+        game.start_position = numpy.argwhere(game.game_array == game.actual_color).tolist()[0]
+        game.final_position = numpy.argwhere(game.game_array == game.actual_color).tolist()[1]
+        game.visited_cells.append(game.start_position)
 
-""" Old Solver ----------------------------------
-        This is an existing solver for reference.
-"""
-def old_solver(current_position, level_file):
-    if (current_position[0] == g.GAME_VARS["final_position"][0]
-            and current_position[1] == g.GAME_VARS["final_position"][1]):
-        if g.GAME_VARS["solved_index"] < len(g.DOT_COLORS) - 1:
-            g.GAME_VARS["solved_index"] += 1
+        if len(game.connected_colors) == 5 and check_full_board(game):
+            game.solve_value = 1
+        elif len(game.connected_colors) == 5 and not check_full_board(game):
+            game.load_level(game.current_level)
 
-        g.GAME_VARS["connected_colors"].append(g.GAME_VARS["actual_color"])
-        actual_color = g.DOT_COLORS[g.GAME_VARS["solved_index"]]
-        visited_cells = []
-        g.GAME_VARS["backtrack_index"] = 0
-        start_position = numpy.argwhere(g.GAME_VARS["grid_array"] == actual_color).tolist()[0]
-        g.GAME_VARS["final_position"] = numpy.argwhere(g.GAME_VARS["grid_array"] == actual_color).tolist()[1]
-        visited_cells.append(start_position)
-
-        if len(g.GAME_VARS["connected_colors"]) == 5 and check_full_board():
-            g.GAME_VARS["solve_value"] = 1
-        elif len(g.GAME_VARS["connected_colors"]) == 5 and not check_full_board():
-            game.load_level(level_file)
         return
 
-    options = find_possible_options(current_position)
+    options = find_possible_options(game, current_position)
 
     if len(options) != 0:
         option = random.choice(options)
-        g.GAME_VARS["grid_array"][option[0]][option[1]] = g.GAME_VARS["actual_color"]
-        pygame.draw.circle(g.GAME_WINDOW["grid_surface"], game.parse_color(g.GAME_VARS["actual_color"]),
+        game.game_array[option[0]][option[1]] = game.actual_color
+        pygame.draw.circle(game.grid_surface, game.parse_color_from_json(game.actual_color),
                            (option[1] * 60 + 30, option[0] * 60 + 30), 25)
-        g.GAME_VARS["bacltrack_index"] = 0
-
+        game.backtrack_index = 0
     else:
-        if len(g.GAME_VARS["visited_cells"]) != 0:
-            if current_position == g.GAME_VARS["start_position"]:
-                game.load_level(level_file)
-                g.GAME_VARS["tries"] += 1
+        if len(game.visited_cells) != 0:
+            if current_position == game.start_position:
+                game.load_level(game.current_level)
+                game.tries += 1
                 return
 
-            g.GAME_VARS["grid_array"][current_position[0]][current_position[1]] = ""
-            pygame.draw.circle(g.GAME_WINDOW["grid_surface"], g.GREY,
+            game.game_array[current_position[0]][current_position[1]] = ""
+            pygame.draw.circle(game.grid_surface, get_val("grey"),
                                (current_position[1] * 60 + 30, current_position[0] * 60 + 30), 25)
-            g.GAME_VARS["backtrack_index"] -= 1
-            option = g.GAME_VARS["visited_cells"][g.GAME_VARS["backtrack_index"]]
+            game.backtrack_index -= 1
+            option = game.visited_cells[game.backtrack_index]
         else:
             print("CANNOT SOLVE THAT LEVEL")
             return
-
-    game.gen_fonts()
+    game.generate_fonts()
     pygame.display.flip()
-    old_solver(option, level_file)
+    solve(game, option)
     return
-""" ------------------------------------ """
+""" ------------------ """
 
 
 
-""" Find Possible Options
-        Old reference search algo.
-"""
-def find_possible_options(position):
+""" Check Full Board """
+def check_full_board(game) -> bool:
+    for x in range(0, 6):
+        for y in range(0, 6):
+            if game.game_array[x][y] == "":
+                return False
+    return True
+""" ---------------- """
+
+
+
+""" Find Possible Options """
+def find_possible_options(game, position):
     options = []
 
     # adding visited position to list
 
-    if position not in g.GAME_VARS["visited_cells"]:
-        g.GAME_VARS["visited_cells"].append(position)
+    if position not in game.visited_cells:
+        game.visited_cells.append(position)
 
     # x axis checking, yep indexes are swapped :(
 
-    if 0 < position[1] < len(g.GAME_VARS["grid_array"]) - 1:
-        if [position[0], position[1] + 1] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0], position[1] + 1] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] and g.GAME_VARS["final_position"][1] == position[1] + 1)):
+    if 0 < position[1] < len(game.game_array) - 1:
+        if [position[0], position[1] + 1] not in game.visited_cells \
+                and (game.game_array[position[0], position[1] + 1] == "" or (
+                game.final_position[0] == position[0] and game.final_position[1] == position[1] + 1)):
             options.append([position[0], position[1] + 1])
-        if [position[0], position[1] - 1] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0], position[1] - 1] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] and g.GAME_VARS["final_position"][1] == position[1] - 1)):
+        if [position[0], position[1] - 1] not in game.visited_cells \
+                and (game.game_array[position[0], position[1] - 1] == "" or (
+                game.final_position[0] == position[0] and game.final_position[1] == position[1] - 1)):
             options.append([position[0], position[1] - 1])
 
     elif position[1] == 0:
-        if [position[0], position[1] + 1] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0], position[1] + 1] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] and g.GAME_VARS["final_position"][1] == position[1] + 1)):
+        if [position[0], position[1] + 1] not in game.visited_cells \
+                and (game.game_array[position[0], position[1] + 1] == "" or (
+                game.final_position[0] == position[0] and game.final_position[1] == position[1] + 1)):
             options.append([position[0], position[1] + 1])
 
-    elif position[1] == len(g.GAME_VARS["grid_array"]) - 1:
-        if [position[0], position[1] - 1] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0], position[1] - 1] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] and g.GAME_VARS["final_position"][1] == position[1] - 1)):
+    elif position[1] == len(game.game_array) - 1:
+        if [position[0], position[1] - 1] not in game.visited_cells \
+                and (game.game_array[position[0], position[1] - 1] == "" or (
+                game.final_position[0] == position[0] and game.final_position[1] == position[1] - 1)):
             options.append([position[0], position[1] - 1])
 
     # # y axis checking, yep indexes are swapped :(
 
-    if 0 < position[0] < len(g.GAME_VARS["grid_array"]) - 1:
-        if [position[0] + 1, position[1]] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0] + 1, position[1]] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] + 1 and g.GAME_VARS["final_position"][1] == position[1])):
+    if 0 < position[0] < len(game.game_array) - 1:
+        if [position[0] + 1, position[1]] not in game.visited_cells \
+                and (game.game_array[position[0] + 1, position[1]] == "" or (
+                game.final_position[0] == position[0] + 1 and game.final_position[1] == position[1])):
             options.append([position[0] + 1, position[1]])
-        if [position[0] - 1, position[1]] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0] - 1, position[1]] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] - 1 and g.GAME_VARS["final_position"][1] == position[1])):
+        if [position[0] - 1, position[1]] not in game.visited_cells \
+                and (game.game_array[position[0] - 1, position[1]] == "" or (
+                game.final_position[0] == position[0] - 1 and game.final_position[1] == position[1])):
             options.append([position[0] - 1, position[1]])
 
     elif position[0] == 0:
-        if [position[0] + 1, position[1]] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0] + 1, position[1]] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] + 1 and g.GAME_VARS["final_position"][1] == position[1])):
+        if [position[0] + 1, position[1]] not in game.visited_cells \
+                and (game.game_array[position[0] + 1, position[1]] == "" or (
+                game.final_position[0] == position[0] + 1 and game.final_position[1] == position[1])):
             options.append([position[0] + 1, position[1]])
 
-    elif position[0] == len(g.GAME_VARS["grid_array"]) - 1:
-        if [position[0] - 1, position[1]] not in g.GAME_VARS["visited_cells"] \
-                and (g.GAME_VARS["grid_array"][position[0] - 1, position[1]] == "" or (
-                g.GAME_VARS["final_position"][0] == position[0] - 1 and g.GAME_VARS["final_position"][1] == position[1])):
+    elif position[0] == len(game.game_array) - 1:
+        if [position[0] - 1, position[1]] not in game.visited_cells \
+                and (game.game_array[position[0] - 1, position[1]] == "" or (
+                game.final_position[0] == position[0] - 1 and game.final_position[1] == position[1])):
             options.append([position[0] - 1, position[1]])
 
     return options
-""" ------------------------------------ """
-
-
-
-""" Check Full Board
-        Old reference checks for full grid.
-"""
-def check_full_board() -> bool:
-    for x in range(g.GRID_SIZE[0]):
-        for y in range(g.GRID_SIZE[1]):
-            if g.GAME_VARS["grid_array"][x][y] == "":
-                return False
-    return True
+""" --------------------- """
