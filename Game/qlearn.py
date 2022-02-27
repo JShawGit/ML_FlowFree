@@ -41,6 +41,11 @@ class Node:
         self.position  = pos  # search current position
         self.neighbors = []   # search neighbors
 
+        self.edges = {  # edges leading from/to neighbors
+            "q": [],
+            "r": []
+        }
+
         self.is_start  = start   # if is starting node
         self.is_final  = final   # if is final, goal node
 
@@ -146,10 +151,17 @@ class Q_Learn_Agent:
 
                 # else accept neighbor
                 else:
+                    # get neighbor
                     neighbor = [z for z in self.grid_nodes if z.position == node[0:2]]
                     neighbor = neighbor[0]
+
+                    # append neighbor and action
                     self.grid_nodes[i].neighbors.append(neighbor)
                     self.grid_nodes[i].actions.append(node[2])
+
+                    # append edge values leading from node to neighbor
+                    self.grid_nodes[i].edges["q"].append(0)
+                    self.grid_nodes[i].edges["r"].append(0)
 
     """ ---------------------- """
 
@@ -246,6 +258,19 @@ class Q_Learn_Agent:
             return True
     """ ------------------ """
 
+
+    """ Get R -- """
+    def get_r(self, current_node, next_node):
+        # return r val of edge from current to next node
+        index = current_node.neighbors.index(next_node)
+        return current_node.edges["r"][index]
+    """ -------- """
+
+
+    """ Get Q -- """
+    def get_q(self):
+        return
+    """ -------- """
 
 """ ----------------------------------- """
 
