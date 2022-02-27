@@ -16,9 +16,7 @@ import json
 """
 class Game:
 
-    """ Initialize Class
-            Initializes a game 'object'.
-    """
+    """ Initialize Class """
     def __init__(self, file):
         # initialize game
         pygame.init()

@@ -33,6 +33,7 @@ def main(file):
 
         pygame.display.flip()
         game.clock.tick(get_val("fps"))
+        print(game.start_position)
 """ ----------------------------------- """
 
 
