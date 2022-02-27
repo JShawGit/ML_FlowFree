@@ -38,14 +38,15 @@ class Node:
 
     """ Initialize Node --------------------------------------- """
     def __init__(self, pos, start, final):
-        self.position = pos  # search current position
-        self.neighbors = []  # search neighbors
+        self.position  = pos  # search current position
+        self.neighbors = []   # search neighbors
 
-        self.is_start = start  # if is starting node
-        self.is_final = final  # if is final, goal node
+        self.is_start  = start   # if is starting node
+        self.is_final  = final   # if is final, goal node
 
         self.actions = []  # actions available at node
         self.r       = 0   # node reward
+
 """ ------------------------------------------ """
 
 
@@ -65,6 +66,10 @@ class Q_Learn_Agent:
         self.grid_x = self.game.grid_size[0]  # grid x len
         self.grid_y = self.game.grid_size[1]  # grid y len
 
+        # filled squares
+        self.orig_filled    = np.zeros((self.grid_x, self.grid_y), dtype=bool)
+        self.current_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
+
         self.start_pos = self.game.start_position  # start grid tile
         self.final_pos = self.game.final_position  # goal grid tile
 
@@ -83,7 +88,7 @@ class Q_Learn_Agent:
         self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
 
-        self.tries = 1000  # search tries
+        self.loop = 1000   # search tries
         self.switcher = {  # switcher for path finding
             'L': 0,
             'R': 1,
@@ -104,6 +109,8 @@ class Q_Learn_Agent:
                 # if start node
                 if [x, y] == self.game.start_position:
                     self.grid_nodes.append(Node([x, y], True, False))
+                    self.orig_filled[x][y]    = True
+                    self.current_filled[x][y] = True
 
                 # if goal node
                 elif [x, y] == self.final_pos:
@@ -144,11 +151,6 @@ class Q_Learn_Agent:
                     self.grid_nodes[i].neighbors.append(neighbor)
                     self.grid_nodes[i].actions.append(node[2])
 
-            # print a node's neighbors to debug
-            if DEBUG and i == 4:
-                for n in self.grid_nodes[i].neighbors:
-                    print(n.position)
-                print('\n')
     """ ---------------------- """
 
 
@@ -174,24 +176,75 @@ class Q_Learn_Agent:
         # starting node
         current_node = self.start_node
 
-        # for many tries
-        for i in range(self.tries):
+        # reset filled squares
+        for x in range(self.grid_x):
+            for y in range(self.grid_y):
+                self.current_filled[x][y] = self.orig_filled[x][y]
 
-            # if starting node
-            if current_node.start:
-                
-                action = random.choice(current_node.actions)         # get a random action
-                action_index = current_node.actions.index(action)    # get neighbor index from action
-                current_node = current_node.neighbors[action_index]  # change current node to selected neighbor
+        # for many tries
+        for i in range(10):
+
+            # if final node, solved!
+            for node in current_node.neighbors:
+                if node.is_final:
+                    print("Reached the final node!")
+                    q_val = 0
+                    return
+
+            # if no more paths
+            if not self.has_moves(current_node):
+                print("Ran out of moves!")
+                return
+
+            while True:
+                action = random.choice(current_node.actions)       # get a random action
+                action_index = current_node.actions.index(action)  # get neighbor index from action
+                new_node = current_node.neighbors[action_index]    # set neighbor as temp node
+
+                # see if this position is filled
+                [x, y] = new_node.position
+                if not self.current_filled[x][y]:
+                    if DEBUG:
+                        print(action + ": " + str(current_node.position) + " --> " + str(new_node.position))
+
+                    # set new node and draw it in
+                    current_node = new_node
+                    self.game.draw_dot(
+                        x,
+                        y,
+                        self.game.current_color
+                    )
+                    self.current_filled[x][y] = True
+                    break
+
+
                 q_col_index = self.switcher.get(action, "nothing")   # get index for Q-Table
 
-                # Added case for first selection is final node
-                if current_node.final:
-                    q_val = 0
-            else:
-                a = 1
+
+
         a = 1
     """ -------------- """
+
+
+
+    """ Has Moves -------- """
+    def has_moves(self, node):
+        no_move     = 0
+        n_neighbors = len(node.neighbors)
+
+        # see if all neighbors are filled
+        for n in node.neighbors:
+            [x, y] = n.position
+            if self.current_filled[x][y]:
+                no_move += 1
+
+        # if all filled: fail
+        if no_move == n_neighbors:
+            return False
+        else:
+            return True
+    """ ------------------ """
+
 
 """ ----------------------------------- """
 
