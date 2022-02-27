@@ -51,12 +51,13 @@ def handle_click_buttons(game, agent):
 
     # restart button click handling
     if 550 > mouse_position[0]   > 400 and 225 > mouse_position[1] > 195:
-        game.tries = 0
         game.load_level()
 
     # solve level button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
         #while game.solve_value == 0:
+        game.tries += 1
+        game.load_level()
         agent.search_algo()
 
     # exit button click handling
