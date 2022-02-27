@@ -1,3 +1,4 @@
+import a_search as search
 import numpy as np
 import random
 
@@ -50,12 +51,12 @@ class Q_Learn_Agent():
         x = self.game.grid_size[0]
         y = self.game.grid_size[1]
         self.num_nodes = x * y
-        self.num_edges =  x * (x-1) + y * (y-1)
-        self.qValues = np.zeros((self.num_edges/2, # x -
-                                 self.num_edges/2  # y |
+        self.num_edges = x * (x-1) + y * (y-1)
+        self.qValues = np.zeros((x * (x-1),  # x -
+                                 y * (y-1)   # y |
                                  ))
-        self.rValues = np.zeros((self.num_edges/2, # x -
-                                 self.num_edges/2  # y |
+        self.rValues = np.zeros((x * (x-1),  # x -
+                                 y * (y-1)   # y |
                                  ))
 
         # possible rewards
@@ -84,50 +85,15 @@ class Q_Learn_Agent():
         self.current_node  = self.game.start_position # starting position
 
         # while not reach the goal node
-        while not np.array_equal(self.current_node, self.game.final_position):
+        res = search.a_search(self.game)
+        print(str(res))
 
-            # while the nodes equal, randomly select next node
-            next_node = self.current_node
-            while np.array_equal(self.current_node, self.game.final_position):
-                # random move
-                move = random.choices([0, 1, 2, 3])
 
-                # move left
-                if move == self.states[move]:
-                    if next_node[0] == 0:
-                        continue
-                    next_node[0] = next_node[0] - 1
-
-                # move right
-                elif move == self.states[move]:
-                    if next_node[0] == self.grid_size[0] - 1:
-                        continue
-                    next_node[0] = next_node[0] + 1
-
-                # move up
-                elif move == self.states[move]:
-                    if next_node[1] == 0:
-                        continue
-                    next_node[1] = next_node[1] - 1
-
-                # move down
-                elif move == self.states[move]:
-                    if next_node[1] == self.grid_size[1] - 1:
-                        continue
-                    next_node[1] = next_node[1] + 1
-
-                # if back at starting node
-                if np.array_equal(next_node, self.game.start_position):
-                    self.set_reward(self.current_node, next_node, self.rewards["start"])
-                    return
 
     # TODO: set reward (R) and Q values for each node-edge action
     def set_reward(self, current_node, next_node, reward):
-
-        # x axis
-        if current_node[0] != next_node[0]:
-            if current_node[0] < next_node[0]:
-                self.rValues[0][] # TODO: uhm
+        # TODO: uhm
+        return
 
 
 

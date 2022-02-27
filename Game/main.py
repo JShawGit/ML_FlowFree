@@ -57,7 +57,7 @@ def handle_click_buttons(game, agent):
     # solve level button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
         while game.solve_value == 0:
-            agent.play_game(game)
+            agent.play_game()
 
     # exit button click handling
     elif 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
