@@ -294,6 +294,18 @@ class Q_Learn_Agent:
         return random.choice(maxi)
         """ -------- """
 
+
+
+    """ Update Q -- """
+    def update_q(self, current_node, next_node):
+        """
+        Q(current_node, next_node) =
+        R(current_node, next_node) + Gamma * Max[Q(next_node, edges from next node)]
+        """
+
+    """ ----------- """
+
+
 """ ----------------------------------- """
 
 
