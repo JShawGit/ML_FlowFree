@@ -268,9 +268,31 @@ class Q_Learn_Agent:
 
 
     """ Get Q -- """
-    def get_q(self):
-        return
-    """ -------- """
+    def get_q(self, current_node, next_node):
+        # we should skip the current node index
+        index = next_node.neighbors.index(current_node)
+
+        # get the max q values
+        maxq = [-1]
+        maxi = [-1]
+        q_vals = next_node.edges["q"]
+        for i in range(len(q_vals)):
+            # skip current node
+            if i == index:
+                continue
+
+            # find max q values
+            else:
+                if q_vals[i] > maxq[0]:
+                    maxq = [q_vals[i]]
+                    maxi = [i]
+                elif q_vals[i] == maxq[0]:
+                    maxq.append(q_vals[i])
+                    maxi.append(i)
+
+        # return a random maximum index
+        return random.choice(maxi)
+        """ -------- """
 
 """ ----------------------------------- """
 
