@@ -185,29 +185,31 @@ class Q_Learn_Agent:
         for i in range(10):
             # if no more paths
             if not self.has_moves(current_node):
-                print("Ran out of moves!")
+                if DEBUG:
+                    print("Ran out of moves!")
                 return
 
             # find a not-filled node
             while True:
                 action = random.choice(current_node.actions)       # get a random action
                 action_index = current_node.actions.index(action)  # get neighbor index from action
-                new_node = current_node.neighbors[action_index]    # set neighbor as temp node
+                next_node = current_node.neighbors[action_index]    # set neighbor as temp node
 
                 # if the new node is the goal, success!
-                if new_node.is_final:
-                    print("Reached the final node!\n")
+                if next_node.is_final:
+                    if DEBUG:
+                        print("Reached the final node!\n")
                     q_val = 0
                     return
 
                 # see if this position is filled
-                [x, y] = new_node.position
+                [x, y] = next_node.position
                 if not self.current_filled[x][y]:
                     if DEBUG:
-                        print(action + ": " + str(current_node.position) + " --> " + str(new_node.position))
+                        print(action + ": " + str(current_node.position) + " --> " + str(next_node.position))
 
                     # set new node and draw it in
-                    current_node = new_node
+                    current_node = next_node
                     self.game.draw_dot(
                         x,
                         y,
