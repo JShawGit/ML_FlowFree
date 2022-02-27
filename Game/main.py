@@ -2,6 +2,7 @@ import pygame
 
 from global_vars import get_val
 import solver as s
+import qlearn as q
 import game as g
 
 """ Main -------------------------------------
@@ -11,6 +12,9 @@ import game as g
 """
 
 GAME_FILE = 'levels/4x4.json'
+ALPHA   = 1
+EPSILON = 1
+GAMMA   = 1
 
 """ Main ----------------------------------
         This is the main program's function
@@ -18,6 +22,9 @@ GAME_FILE = 'levels/4x4.json'
 def main(file):
     # create the game
     game = g.Game(file)
+
+    # create learning agent
+    agent = q.Q_Learn_Agent(game, ALPHA, EPSILON, GAMMA)
 
     # while the game is running
     while game.running:
@@ -29,17 +36,16 @@ def main(file):
             if event.type == pygame.QUIT:
                 game.running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                handle_click_buttons(game)
+                handle_click_buttons(game, agent)
 
         pygame.display.flip()
         game.clock.tick(get_val("fps"))
-        print(game.start_position)
 """ ----------------------------------- """
 
 
 
-""" Handle Click Buttons """
-def handle_click_buttons(game):
+""" Handle Click Buttons --------- """
+def handle_click_buttons(game, agent):
 
     mouse_position = pygame.mouse.get_pos()
 
@@ -51,7 +57,7 @@ def handle_click_buttons(game):
     # solve level button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
         while game.solve_value == 0:
-            s.solve(game, game.start_position)
+            agent.play_game(game)
 
     # exit button click handling
     elif 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
