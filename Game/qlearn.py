@@ -8,38 +8,17 @@ import pygame
 """ Q Learning ----------------------------
         Will learn how to connect the dots.
 """
-def q_learning(game):
-
-
-
-
-
-
-    print("Q Learn!")
+class Q_Learn_Agent():
+    def __init__(self, game, alpha, epsilon, gamma):
+        self.game    = game
+        self.alpha   = alpha
+        self.epsilon = epsilon
+        self.gamma   = gamma
 """ ----------------------------------- """
 
 
 
-""" A* Search ------------------------
-        Will find a path between dots.
-"""
-def a_search(game):
-    print("A Search!")
-""" ----------------------------------- """
 
 
-
-""" Draw Dot -----------------------
-        Based on the reference code,
-        will draw a dot on the grid.
-"""
-def draw_dot(game, x, y):
-    pygame.draw.circle(
-        game.grid_surface,
-        game.parse_color_from_json(game.current_color),
-        (x * 60 + 30, y * 60 + 30),
-        25
-    )
-""" ---------------------------- """
 
 

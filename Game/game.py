@@ -40,7 +40,7 @@ class Game:
         self.grid_mult   = 60
 
         # solver variables
-        self.current_color     = ""
+        self.current_color    = ""
         self.tries            = 0
         self.backtrack_index  = 0
         self.solved_index     = 0
@@ -73,7 +73,7 @@ class Game:
         self.grid_array         = []
         self.visited_cells      = []
         self.connected_colors   = []
-        self.current_color       = ""
+        self.current_color      = ""
         self.backtrack_index    = 0
         self.solved_index       = 0
         self.solve_value        = 0
@@ -99,11 +99,7 @@ class Game:
             for dot in level["dots"]:
                 x = dot["x"]
                 y = dot["y"]
-                pygame.draw.circle(
-                    self.grid_surface,
-                    self.parse_color_from_json(dot["color"]),
-                    (30 + dot["x"]*60, 30 + dot["y"]*60), 25
-                )
+                self.draw_dot(dot["x"], dot["y"], self.parse_color_from_json(dot["color"]))
                 self.grid_array[x][y] = dot["color"]
 
             # draw level label
@@ -197,4 +193,20 @@ class Game:
 
 
 
-    """ ------------------------ """
+    """ Draw Dot -----------------------
+            Based on the reference code,
+            will draw a dot on the grid.
+    """
+    def draw_dot(self, x, y, color):
+        pygame.draw.circle(
+            self.grid_surface,
+            color,
+            (x * 60 + 30, y * 60 + 30),
+            25
+        )
+
+    """ ---------------------------- """
+
+
+
+""" -------------------------------- """

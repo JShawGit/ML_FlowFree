@@ -3,7 +3,6 @@ import pygame
 from global_vars import get_val
 import solver as s
 import game as g
-import SearchAlgo.a_search as a_star
 
 """ Main -------------------------------------
     This file is the main file of the program.
@@ -11,7 +10,7 @@ import SearchAlgo.a_search as a_star
     https://github.com/hreso110100/FlowFree-Solver
 """
 
-GAME_FILE = 'levels/3x3.json'
+GAME_FILE = 'levels/4x4.json'
 
 """ Main ----------------------------------
         This is the main program's function
@@ -51,8 +50,7 @@ def handle_click_buttons(game):
     # solve level button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
         while game.solve_value == 0:
-           # s.solve(game, game.start_position)
-           a_star.a_search(game)
+            s.solve(game, game.start_position)
 
     # exit button click handling
     elif 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
