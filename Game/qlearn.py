@@ -26,12 +26,179 @@ Actions:
 
 """
 
+
+
+""" Node -----------------------------------------
+        This is creates a node, which is each cell
+        within a grid..
+"""
+class Node:
+
+    """ Initialize Node --------------------------------------- """
+    def __init__(self, pos, start, final):
+        self.position = pos  # search current position
+        self.neighbors = []  # search neighbors
+
+        self.is_start = start  # if is starting node
+        self.is_final = final  # if is final, goal node
+
+        self.actions = []  # actions available at node
+        self.r       = 0   # node reward
+""" ------------------------------------------ """
+
+
+
+
 """ Q Learning ----------------------------
         Will learn how to connect the dots.
 """
-class Q_Learn_Agent():
+class Q_Learn_Agent:
 
     """ Initialize Agent ----------------------- """
+    def __init__(self, game, alpha, epsilon, gamma):
+        self.game    = game
+        self.alpha   = alpha
+        self.epsilon = epsilon
+        self.gamma   = gamma
+
+        self.grid_x = self.game.grid_size[0]  # grid x len
+        self.grid_y = self.game.grid_size[1]  # grid y len
+
+        self.start_pos = self.game.start_position  # start grid tile
+        self.goal_pos  = self.game.final_position  # goal grid tile
+
+        self.q_values = []  # q-vals for each edge
+        self.r_values = []  # r-vals for each edge
+
+        self.grid_nodes = []       # store all grid-nodes here
+        self.generate_nodes()      # get nodes
+        self.generate_neighbors()  # get node-neighbors
+
+        # get the start node
+        self.start_node = [x for x in self.grid_nodes if x.start]
+        self.start_node = self.start_node[0]
+
+        # get the final node
+        self.final_node = [x for x in self.grid_nodes if x.final]
+        self.final_node = self.final_node[0]
+
+        self.tries = 1000  # search tries
+        self.switcher = {  # switcher for path finding
+            'L': 0,
+            'R': 1,
+            'U': 2,
+            'D': 3
+        }
+
+    """ ---------------------------------------- """
+
+
+
+    """ Generate Nodes -- """
+    def generate_nodes(self):
+        # for every square in the grid
+        for x in range(self.grid_x):
+            for y in range(self.grid_y):
+
+                # if start node
+                if [x, y] == self.game.start_position:
+                    self.grid_nodes.append(Node([x, y], True, False))
+
+                # if goal node
+                elif [x, y] == self.final_pos:
+                    self.grid_nodes.append(Node([x, y], False, True))
+
+                # if empty node
+                else:
+                    self.grid_nodes.append(Node([x, y], False, False))
+    """ ------------------ """
+
+
+
+    """ Generate Neighbors -- """
+    def generate_neighbors(self):
+        # for every node, get neighbors
+        for i in range(len(self.grid_nodes)):
+
+            # get position of self and neighbors
+            [x, y] = self.grid_nodes[i].position
+            neighbor_nodes = [
+                [x - 1, y, 'L'],  # left
+                [x + 1, y, 'R'],  # right
+                [x, y - 1, 'U'],  # up
+                [x, y + 1, 'D']   # down
+            ]
+
+            # go over every neighbor
+            for node in neighbor_nodes:
+
+                # skip if out of range
+                if self.skip_neighbor(self.game, node[0:2]):
+                    continue
+
+                # else accept neighbor
+                else:
+                    neighbor = [z for z in self.grid_nodes if z.position == node[0:2]]
+                    neighbor = neighbor[0]
+                    self.grid_nodes[i].neighbors.append(neighbor)
+                    self.grid_nodes[i].actions.append(node[2])
+    """ ---------------------- """
+
+
+
+    """ Skip Neighbor -------------- """
+    def skip_neighbor(self, next_state):
+        # skip if out of bounds
+        if next_state[0] > self.grid_x - 1 \
+                or next_state[1] > self.grid_y - 1 \
+                or next_state[0] < 0 \
+                or next_state[1] < 0:
+            return True
+
+        # don't skip
+        else:
+            return False
+    """ ---------------------------- """
+
+
+
+    """ Search Algo -- """
+    def search_algo(self):
+        # starting node
+        current_node = self.start_node
+
+        # for many tries
+        for i in range(self.tries):
+
+            # if starting node
+            if current_node.start:
+                action = random.choice(current_node.actions)         # get a random action
+                action_index = current_node.actions.index(action)    # get neighbor index from action
+                current_node = current_node.neighbors[action_index]  # Changing current node to selected neighbor
+                q_col_index = self.switcher.get(action, "nothing")   # Getting index for Q-Table
+
+                # Added case for first selection is final node
+                if current_node.final:
+                    q_val
+            else:
+                a = 1
+        a = 1
+    """ -------------- """
+
+
+
+
+
+
+
+
+
+
+
+
+
+    """ Initialize Agent ----------------------- """
+"""
     def __init__(self, game, alpha, epsilon, gamma):
         self.game    = game
         self.alpha   = alpha
@@ -77,25 +244,37 @@ class Q_Learn_Agent():
         self.solve_value      = 0
         self.tries            = 0
 
+"""
 
-
-    """ Play Game """
+   # """ Play Game """
+"""
     def play_game(self):
-        self.current_state = self.states[0]           # starting state
-        self.current_node  = self.game.start_position # starting position
+        if self.game.grid_size[0] != 3:
+            print("Can only solve with 3x3 grids!")
+            return
+
+        self.current_state = self.states[0]            # starting state
+        self.current_node  = self.game.start_position  # starting position
 
         # while not reach the goal node
-        res = search.a_search(self.game)
-        print(str(res))
+        search.a_search(self.game)
 
 
 
     # TODO: set reward (R) and Q values for each node-edge action
     def set_reward(self, current_node, next_node, reward):
-        # TODO: uhm
+        if current_node[0] != next_node[0]:
+            self.rValues[0][]
         return
 
 
+
+    # TODO: set Q value for each node-edge action
+    def set_qval(self, current_node, next_node, val):
+        # TODO: uhm
+        return
+
+"""
 
 """ ----------------------------------- """
 
