@@ -2,6 +2,8 @@ import a_search as search
 import numpy as np
 import random
 
+DEBUG = True  # to print debug dialogue
+
 """ Q Learn ----------------------------
     This file contains the RL algorithm.
 """ """
@@ -48,7 +50,6 @@ class Node:
 
 
 
-
 """ Q Learning ----------------------------
         Will learn how to connect the dots.
 """
@@ -65,7 +66,7 @@ class Q_Learn_Agent:
         self.grid_y = self.game.grid_size[1]  # grid y len
 
         self.start_pos = self.game.start_position  # start grid tile
-        self.goal_pos  = self.game.final_position  # goal grid tile
+        self.final_pos = self.game.final_position  # goal grid tile
 
         self.q_values = []  # q-vals for each edge
         self.r_values = []  # r-vals for each edge
@@ -75,11 +76,11 @@ class Q_Learn_Agent:
         self.generate_neighbors()  # get node-neighbors
 
         # get the start node
-        self.start_node = [x for x in self.grid_nodes if x.start]
+        self.start_node = [x for x in self.grid_nodes if x.is_start]
         self.start_node = self.start_node[0]
 
         # get the final node
-        self.final_node = [x for x in self.grid_nodes if x.final]
+        self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
 
         self.tries = 1000  # search tries
@@ -133,7 +134,7 @@ class Q_Learn_Agent:
             for node in neighbor_nodes:
 
                 # skip if out of range
-                if self.skip_neighbor(self.game, node[0:2]):
+                if self.skip_neighbor(node[0:2]):
                     continue
 
                 # else accept neighbor
@@ -142,6 +143,12 @@ class Q_Learn_Agent:
                     neighbor = neighbor[0]
                     self.grid_nodes[i].neighbors.append(neighbor)
                     self.grid_nodes[i].actions.append(node[2])
+
+            # print a node's neighbors to debug
+            if DEBUG and i == 4:
+                for n in self.grid_nodes[i].neighbors:
+                    print(n.position)
+                print('\n')
     """ ---------------------- """
 
 
@@ -172,19 +179,21 @@ class Q_Learn_Agent:
 
             # if starting node
             if current_node.start:
+                
                 action = random.choice(current_node.actions)         # get a random action
                 action_index = current_node.actions.index(action)    # get neighbor index from action
-                current_node = current_node.neighbors[action_index]  # Changing current node to selected neighbor
-                q_col_index = self.switcher.get(action, "nothing")   # Getting index for Q-Table
+                current_node = current_node.neighbors[action_index]  # change current node to selected neighbor
+                q_col_index = self.switcher.get(action, "nothing")   # get index for Q-Table
 
                 # Added case for first selection is final node
                 if current_node.final:
-                    q_val
+                    q_val = 0
             else:
                 a = 1
         a = 1
     """ -------------- """
 
+""" ----------------------------------- """
 
 
 
@@ -197,7 +206,6 @@ class Q_Learn_Agent:
 
 
 
-    """ Initialize Agent ----------------------- """
 """
     def __init__(self, game, alpha, epsilon, gamma):
         self.game    = game
