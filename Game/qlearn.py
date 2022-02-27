@@ -183,23 +183,22 @@ class Q_Learn_Agent:
 
         # for many tries
         for i in range(10):
-
-            # if final node, solved!
-            for node in current_node.neighbors:
-                if node.is_final:
-                    print("Reached the final node!")
-                    q_val = 0
-                    return
-
             # if no more paths
             if not self.has_moves(current_node):
                 print("Ran out of moves!")
                 return
 
+            # find a not-filled node
             while True:
                 action = random.choice(current_node.actions)       # get a random action
                 action_index = current_node.actions.index(action)  # get neighbor index from action
                 new_node = current_node.neighbors[action_index]    # set neighbor as temp node
+
+                # if the new node is the goal, success!
+                if new_node.is_final:
+                    print("Reached the final node!\n")
+                    q_val = 0
+                    return
 
                 # see if this position is filled
                 [x, y] = new_node.position
