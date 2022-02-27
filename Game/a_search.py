@@ -1,6 +1,5 @@
-# TODO: create search algorithm
-import numpy
 import pygame
+import numpy
 """ 
 A* Search Algorithm
   This is an implementation of the A* search algorithm
@@ -84,8 +83,8 @@ def a_search(game):
                 game.solve_value = 1
                 return None
 
-            game.start_position = numpy.argwhere(game.grid_array == game.current_color).tolist()[0]
-            game.final_position = numpy.argwhere(game.grid_array == game.current_color).tolist()[1]
+            #game.start_position = numpy.argwhere(game.grid_array == game.current_color).tolist()[0]
+            #game.final_position = numpy.argwhere(game.grid_array == game.current_color).tolist()[1]
             game.visited_cells.extend(path)
 
             # Resetting Game for next colored dot
