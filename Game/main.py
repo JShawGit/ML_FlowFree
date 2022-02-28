@@ -2,7 +2,7 @@ import pygame
 import time
 
 from global_vars import get_val
-import solver as s
+import tester as t
 import qlearn as q
 import game as g
 
@@ -15,7 +15,7 @@ import game as g
 GAME_FILE = 'levels/4x4.json'
 ALPHA   = 1
 EPSILON = 1
-GAMMA   = .9
+GAMMA   = 1
 LOOPS   = 1000
 
 """ Main ----------------------------------
@@ -119,7 +119,31 @@ def result_agent(agent, game):
 
 
 
+""" Test --------------------- """
+def test(n_games, iter_arr, file):
+    t.test_runs(
+        n_games,
+        iter_arr,
+        file,
+        ALPHA,
+        EPSILON,
+        GAMMA,
+        LOOPS,
+        "graph.png"
+    )
+""" ---------------------- """
+
+
+
 """ Run this if this file is ran """
 if __name__ == "__main__":
-    main(GAME_FILE)
+    yes = False
+    if yes:
+        test(
+            100,
+            [1000, 5000, 10000],
+            GAME_FILE
+        )
+    else:
+        main(GAME_FILE)
 """ --------------------------- """

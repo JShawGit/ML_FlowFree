@@ -197,28 +197,22 @@ class Q_Learn_Agent:
             if not self.has_moves(current_node):
                 if False:
                     print("Ran out of moves!")
-                    self.update_r(False)
-                return
+                return False
 
             # find a not-filled node
             while True:
 
-                # TODO: Fix exp decay
-                # if self.game.tries % 10 == 0:
-                #     self.epsilon = self.epsilon - 0.001
+                if self.game.tries % 10 == 0:
+                    self.epsilon = self.epsilon - 0.001
 
-                # if np.random.uniform(0, 1) < np.exp(self.gamma - 1):
-                #     action = random.choice(current_node.actions)  # get a random action
-                #     action_index = current_node.actions.index(action)  # get neighbor index from action
-                #     next_node = current_node.neighbors[action_index]  # set neighbor as temp node
-                # else:
-                #     action = max(current_node.edges['r'])
-                #     action_index = current_node.edges['r'].index(action)
-                #     next_node = current_node.neighbors[action_index]
-
-                action = random.choice(current_node.actions)       # get a random action
-                action_index = current_node.actions.index(action)  # get neighbor index from action
-                next_node = current_node.neighbors[action_index]   # set neighbor as temp node
+                if np.random.uniform(0, 1) < np.exp(self.gamma - 1):
+                    action = random.choice(current_node.actions)  # get a random action
+                    action_index = current_node.actions.index(action)  # get neighbor index from action
+                    next_node = current_node.neighbors[action_index]  # set neighbor as temp node
+                else:
+                    action = max(current_node.edges['r'])
+                    action_index = current_node.edges['r'].index(action)
+                    next_node = current_node.neighbors[action_index]
 
                 # if the new node is the goal, success!
                 if next_node.is_final:
@@ -228,11 +222,7 @@ class Q_Learn_Agent:
 
                     # update q and r values and return
                     self.update_q(current_node, next_node)
-                    if len(self.node_path) == (len(self.grid_nodes)):
-                        self.update_r(True)
-                    else:
-                        self.update_r(False)
-                    return
+                    return True
 
                 # see if this position is filled
                 [x, y] = next_node.position
@@ -390,7 +380,6 @@ class Q_Learn_Agent:
                     print("Ran out of moves!")
                 return
 
-            print(qvals)
             bestq  = max(qvals)
             indexq = qvals.index(bestq)
             next_node = current_node.neighbors[indexq]
