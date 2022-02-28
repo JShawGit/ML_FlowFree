@@ -16,7 +16,7 @@ GAME_FILE = 'levels/4x4.json'
 ALPHA   = 1
 EPSILON = 1
 GAMMA   = 1
-LOOPS   = 1000
+LOOPS   = 100
 
 """ Main ----------------------------------
         This is the main program's function
@@ -137,11 +137,11 @@ def test(n_games, iter_arr, file):
 
 """ Run this if this file is ran """
 if __name__ == "__main__":
-    yes = False
+    yes = True
     if yes:
         test(
             100,
-            [1000, 5000, 10000],
+            [500, 1000, 5000],
             GAME_FILE
         )
     else:

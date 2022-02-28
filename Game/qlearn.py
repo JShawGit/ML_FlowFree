@@ -7,20 +7,25 @@ DEBUG = False  # to print debug dialogue
 """ Q Learn ----------------------------
     This file contains the RL algorithm.
 """ """
+
 https://serengetitech.com/tech/using-q-learning-for-pathfinding/
 https://towardsdatascience.com/q-learning-algorithm-from-explanation-to-implementation-cdbeda2ea187
+
 [ R | - | - ]
 [ - | - | - ]
 [ R | - | - ]
+
 States: 
     Unconnected, not filled (UN)
     Connected, not filled   (CN)
     Connected, filled       (CF)
+
 Actions:
     Left  (L)
     Right (R)
     Up    (U)
     Down  (D)
+
 """
 
 
@@ -197,22 +202,14 @@ class Q_Learn_Agent:
             if not self.has_moves(current_node):
                 if False:
                     print("Ran out of moves!")
-                return False
+                    self.update_r(False)
+                return
 
             # find a not-filled node
             while True:
-
-                if self.game.tries % 10 == 0:
-                    self.epsilon = self.epsilon - 0.001
-
-                if np.random.uniform(0, 1) < np.exp(self.gamma - 1):
-                    action = random.choice(current_node.actions)  # get a random action
-                    action_index = current_node.actions.index(action)  # get neighbor index from action
-                    next_node = current_node.neighbors[action_index]  # set neighbor as temp node
-                else:
-                    action = max(current_node.edges['r'])
-                    action_index = current_node.edges['r'].index(action)
-                    next_node = current_node.neighbors[action_index]
+                action = random.choice(current_node.actions)       # get a random action
+                action_index = current_node.actions.index(action)  # get neighbor index from action
+                next_node = current_node.neighbors[action_index]   # set neighbor as temp node
 
                 # if the new node is the goal, success!
                 if next_node.is_final:
@@ -222,7 +219,11 @@ class Q_Learn_Agent:
 
                     # update q and r values and return
                     self.update_q(current_node, next_node)
-                    return True
+                    if len(self.node_path) == (len(self.grid_nodes)):
+                        self.update_r(True)
+                    else:
+                        self.update_r(False)
+                    return
 
                 # see if this position is filled
                 [x, y] = next_node.position
@@ -399,7 +400,7 @@ class Q_Learn_Agent:
                 if len(qvals) == 0:
                     if DEBUG:
                         print("Ran out of moves!")
-                    return
+                    return False
 
                 # else set new next node
                 bestq  = max(qvals)
@@ -411,7 +412,7 @@ class Q_Learn_Agent:
                 if next_node.is_final:
                     if DEBUG:
                         print("Reached the final node!\n")
-                    return
+                    return True
 
             # set new node and draw it in
             current_node = next_node
