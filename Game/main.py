@@ -86,7 +86,7 @@ def teach_agent(agent, game):
     game.load_level()
 
     # learn
-    agent.learning_algo()
+    agent.learning_algo(game.tries)
 
     # show results
     game.clock.tick(get_val("fps"))

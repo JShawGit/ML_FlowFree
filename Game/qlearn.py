@@ -186,7 +186,7 @@ class Q_Learn_Agent:
 
 
     """ Learning Algo -- """
-    def learning_algo(self):
+    def learning_algo(self, tries):
         # starting node
         current_node = self.start_node
         self.node_path = [current_node]
@@ -207,6 +207,11 @@ class Q_Learn_Agent:
 
             # find a not-filled node
             while True:
+
+                x = np.exp(-tries/self.learning_loops)
+
+
+
                 action = random.choice(current_node.actions)       # get a random action
                 action_index = current_node.actions.index(action)  # get neighbor index from action
                 next_node = current_node.neighbors[action_index]   # set neighbor as temp node

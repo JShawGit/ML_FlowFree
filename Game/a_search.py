@@ -103,7 +103,7 @@ def a_search(game):
 
 
 
-        (x, y) = current_node.position
+        [x, y] = current_node.position
 
         neighbor_states = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
 
