@@ -7,25 +7,20 @@ DEBUG = False  # to print debug dialogue
 """ Q Learn ----------------------------
     This file contains the RL algorithm.
 """ """
-
 https://serengetitech.com/tech/using-q-learning-for-pathfinding/
 https://towardsdatascience.com/q-learning-algorithm-from-explanation-to-implementation-cdbeda2ea187
-
 [ R | - | - ]
 [ - | - | - ]
 [ R | - | - ]
-
 States: 
     Unconnected, not filled (UN)
     Connected, not filled   (CN)
     Connected, filled       (CF)
-
 Actions:
     Left  (L)
     Right (R)
     Up    (U)
     Down  (D)
-
 """
 
 
@@ -186,7 +181,7 @@ class Q_Learn_Agent:
 
 
     """ Learning Algo -- """
-    def learning_algo(self, tries):
+    def learning_algo(self):
         # starting node
         current_node = self.start_node
         self.node_path = [current_node]
@@ -208,13 +203,17 @@ class Q_Learn_Agent:
             # find a not-filled node
             while True:
 
-                x = np.exp(-tries/self.learning_loops)
+                if self.game.tries % 10 == 0:
+                    self.epsilon = self.epsilon - 0.001
 
-
-
-                action = random.choice(current_node.actions)       # get a random action
-                action_index = current_node.actions.index(action)  # get neighbor index from action
-                next_node = current_node.neighbors[action_index]   # set neighbor as temp node
+                if np.random.uniform(0, 1) < np.exp(self.gamma - 1):
+                    action = random.choice(current_node.actions)  # get a random action
+                    action_index = current_node.actions.index(action)  # get neighbor index from action
+                    next_node = current_node.neighbors[action_index]  # set neighbor as temp node
+                else:
+                    action = max(current_node.edges['r'])
+                    action_index = current_node.edges['r'].index(action)
+                    next_node = current_node.neighbors[action_index]
 
                 # if the new node is the goal, success!
                 if next_node.is_final:

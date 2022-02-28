@@ -14,7 +14,7 @@ import game as g
 
 GAME_FILE = 'levels/4x4.json'
 ALPHA   = 1
-EPSILON = .5
+EPSILON = 1
 GAMMA   = 1
 LOOPS   = 1000
 
@@ -86,7 +86,7 @@ def teach_agent(agent, game):
     game.load_level()
 
     # learn
-    agent.learning_algo(game.tries)
+    agent.learning_algo()
 
     # show results
     game.clock.tick(get_val("fps"))
