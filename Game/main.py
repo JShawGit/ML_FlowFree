@@ -3,7 +3,7 @@ import time
 
 from global_vars import get_val
 import tester as t
-import qlearn as q
+import qlearnold as q
 import game as g
 
 """ Main -------------------------------------
@@ -120,29 +120,45 @@ def result_agent(agent, game):
 
 
 """ Test --------------------- """
-def test(n_games, iter_arr, file):
-    t.test_runs(
-        n_games,
-        iter_arr,
-        file,
-        ALPHA,
-        EPSILON,
-        GAMMA,
-        LOOPS,
-        "graph.png"
-    )
+def test(n_games, iter_arr, file, pic, type):
+    if type == 0:
+        t.test_TF(
+            n_games,
+            iter_arr,
+            file,
+            ALPHA,
+            EPSILON,
+            GAMMA,
+            LOOPS,
+            pic
+        )
+
+    elif type == 1:
+        t.test_lengths(
+            n_games,
+            iter_arr,
+            file,
+            ALPHA,
+            EPSILON,
+            GAMMA,
+            LOOPS,
+            pic,
+
+        )
 """ ---------------------- """
 
 
 
 """ Run this if this file is ran """
 if __name__ == "__main__":
-    yes = True
+    yes = False
     if yes:
         test(
-            100,
-            [500, 1000, 5000],
-            GAME_FILE
+            1000,
+            [100, 500, 1000, 5000, 10000],
+            GAME_FILE,
+            "successes.png",
+            0
         )
     else:
         main(GAME_FILE)
