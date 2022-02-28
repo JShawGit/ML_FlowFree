@@ -67,6 +67,7 @@ class Game:
 
     """ Load a Level From a File """
     def load_level(self):
+
         # reset values
         self.grid_array         = []
         self.visited_cells      = []
@@ -134,15 +135,15 @@ class Game:
     """ Generate Buttons """
     def generate_buttons(self):
 
-        # restart button
-        restart_button_text = self.font_sm.render("Restart", False, get_val("white"))
+        # clear button
+        clear_button_text = self.font_sm.render("Learn", False, get_val("white"))
         pygame.draw.rect(self.main_surface, get_val("cyan"), (400, 195, 150, 30))
-        self.main_surface.blit(restart_button_text, (433, 195))
+        self.main_surface.blit(clear_button_text, (443, 195))
 
         # solve button
-        solve_button_text = self.font_sm.render("Solve", False, get_val("purple"))
+        solve_button_text = self.font_sm.render("Result", False, get_val("purple"))
         pygame.draw.rect(self.main_surface, get_val("white"), (400, 245, 150, 30))
-        self.main_surface.blit(solve_button_text, (443, 245))
+        self.main_surface.blit(solve_button_text, (440, 245))
 
         # quit button
         quit_button_text = self.font_sm.render("Quit", False, get_val("purple"))
@@ -186,7 +187,7 @@ class Game:
         # set labels
         self.main_surface.blit(self.grid_surface, (w, h))
         self.main_surface.blit(text_moves_label,  (415, 80))
-        self.main_surface.blit(text_moves_value,  (460, 125))
+        self.main_surface.blit(text_moves_value,  (415, 125))
     """ -------------- """
 
 

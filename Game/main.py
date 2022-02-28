@@ -1,4 +1,5 @@
 import pygame
+import time
 
 from global_vars import get_val
 import solver as s
@@ -15,6 +16,7 @@ GAME_FILE = 'levels/4x4.json'
 ALPHA   = 1
 EPSILON = 1
 GAMMA   = 1
+LOOPS   = 1000
 
 """ Main ----------------------------------
         This is the main program's function
@@ -24,7 +26,7 @@ def main(file):
     game = g.Game(file)
 
     # create learning agent
-    agent = q.Q_Learn_Agent(game, ALPHA, EPSILON, GAMMA)
+    agent = q.Q_Learn_Agent(game, ALPHA, EPSILON, GAMMA, LOOPS)
 
     # while the game is running
     while game.running:
@@ -49,22 +51,69 @@ def handle_click_buttons(game, agent):
 
     mouse_position = pygame.mouse.get_pos()
 
-    # restart button click handling
+    # learn button click handling
     if 550 > mouse_position[0]   > 400 and 225 > mouse_position[1] > 195:
-        game.load_level()
+        for i in range(agent.learning_loops):
+            teach_agent(agent, game)
 
-    # solve level button click handling
+    # result button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
-        #while game.solve_value == 0:
-        game.tries += 1
-        game.load_level()
-        agent.search_algo()
+        result_agent(agent, game)
 
     # exit button click handling
     elif 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
         print("Game exited!")
         exit(0)
 """ -------------------- """
+
+
+
+""" Teach Agent --------- """
+def teach_agent(agent, game):
+    # sense exit
+    for event in pygame.event.get():
+        if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.QUIT:
+            mouse_position = pygame.mouse.get_pos()
+            if 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
+                print("Game exited!")
+                exit(0)
+
+    # reset board
+    game.tries += 1
+    pygame.display.flip()
+    game.load_level()
+
+    # learn
+    agent.learning_algo()
+
+    # show results
+    game.clock.tick(get_val("fps"))
+    game.generate_fonts()
+""" ------------------- """
+
+
+
+""" Result Agent --------- """
+def result_agent(agent, game):
+    # sense exit
+    for event in pygame.event.get():
+        if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.QUIT:
+            mouse_position = pygame.mouse.get_pos()
+            if 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
+                print("Game exited!")
+                exit(0)
+
+    # reset board
+    pygame.display.flip()
+    game.load_level()
+
+    # learn
+    agent.best_result()
+
+    # show results
+    game.clock.tick(get_val("fps"))
+    game.generate_fonts()
+""" ------------------- """
 
 
 

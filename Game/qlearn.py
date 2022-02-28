@@ -2,7 +2,7 @@ import a_search as search
 import numpy as np
 import random
 
-DEBUG = True  # to print debug dialogue
+DEBUG = False  # to print debug dialogue
 
 """ Q Learn ----------------------------
     This file contains the RL algorithm.
@@ -52,7 +52,7 @@ class Node:
         self.actions = []  # actions available at node
         self.r       = 0   # node reward
 
-""" ------------------------------------------ """
+""" --- End Node --------------------------------------- """
 
 
 
@@ -62,11 +62,13 @@ class Node:
 class Q_Learn_Agent:
 
     """ Initialize Agent ----------------------- """
-    def __init__(self, game, alpha, epsilon, gamma):
+    def __init__(self, game, alpha, epsilon, gamma, loops):
         self.game    = game
         self.alpha   = alpha
         self.epsilon = epsilon
         self.gamma   = gamma
+
+        self.learning_loops = loops  # how many times to learn
 
         self.grid_x = self.game.grid_size[0]  # grid x len
         self.grid_y = self.game.grid_size[1]  # grid y len
@@ -93,15 +95,15 @@ class Q_Learn_Agent:
         self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
 
-        self.loop = 1000   # search tries
-        self.switcher = {  # switcher for path finding
+        # switcher for path finding
+        self.switcher = {
             'L': 0,
             'R': 1,
             'U': 2,
             'D': 3
         }
 
-    """ ---------------------------------------- """
+    """ --- End Init ------------------------------ """
 
 
 
@@ -124,7 +126,7 @@ class Q_Learn_Agent:
                 # if empty node
                 else:
                     self.grid_nodes.append(Node([x, y], False, False))
-    """ ------------------ """
+    """ --- End Gen Nodes --------------- """
 
 
 
@@ -161,9 +163,12 @@ class Q_Learn_Agent:
 
                     # append edge values leading from node to neighbor
                     self.grid_nodes[i].edges["q"].append(0)
-                    self.grid_nodes[i].edges["r"].append(0)
+                    if neighbor.is_final:
+                        self.grid_nodes[i].edges["r"].append(100)
+                    else:
+                        self.grid_nodes[i].edges["r"].append(1)
 
-    """ ---------------------- """
+    """ --- End Gen Neighbors ------------------- """
 
 
 
@@ -179,12 +184,12 @@ class Q_Learn_Agent:
         # don't skip
         else:
             return False
-    """ ---------------------------- """
+    """ --- End Skip Neighbor ------------------------- """
 
 
 
-    """ Search Algo -- """
-    def search_algo(self):
+    """ Learning Algo -- """
+    def learning_algo(self):
         # starting node
         current_node = self.start_node
 
@@ -193,8 +198,8 @@ class Q_Learn_Agent:
             for y in range(self.grid_y):
                 self.current_filled[x][y] = self.orig_filled[x][y]
 
-        # for many tries
-        for i in range(10):
+        # while not solved path
+        while True:
             # if no more paths
             if not self.has_moves(current_node):
                 if DEBUG:
@@ -205,13 +210,15 @@ class Q_Learn_Agent:
             while True:
                 action = random.choice(current_node.actions)       # get a random action
                 action_index = current_node.actions.index(action)  # get neighbor index from action
-                next_node = current_node.neighbors[action_index]    # set neighbor as temp node
+                next_node = current_node.neighbors[action_index]   # set neighbor as temp node
 
                 # if the new node is the goal, success!
                 if next_node.is_final:
                     if DEBUG:
                         print("Reached the final node!\n")
-                    q_val = 0
+
+                    # update q value and return
+                    self.update_q(current_node, next_node)
                     return
 
                 # see if this position is filled
@@ -219,6 +226,9 @@ class Q_Learn_Agent:
                 if not self.current_filled[x][y]:
                     if DEBUG:
                         print(action + ": " + str(current_node.position) + " --> " + str(next_node.position))
+
+                    # update q value
+                    self.update_q(current_node, next_node)
 
                     # set new node and draw it in
                     current_node = next_node
@@ -229,14 +239,7 @@ class Q_Learn_Agent:
                     )
                     self.current_filled[x][y] = True
                     break
-
-
-                q_col_index = self.switcher.get(action, "nothing")   # get index for Q-Table
-
-
-
-        a = 1
-    """ -------------- """
+    """ --- End Learning Algo ----------- """
 
 
 
@@ -256,7 +259,7 @@ class Q_Learn_Agent:
             return False
         else:
             return True
-    """ ------------------ """
+    """ --- End Has Moves --------------- """
 
 
     """ Get R -- """
@@ -264,7 +267,7 @@ class Q_Learn_Agent:
         # return r val of edge from current to next node
         index = current_node.neighbors.index(next_node)
         return current_node.edges["r"][index]
-    """ -------- """
+    """ --- End Get R ----- """
 
 
     """ Get Q -- """
@@ -292,116 +295,97 @@ class Q_Learn_Agent:
 
         # return a random maximum index
         return random.choice(maxi)
-        """ -------- """
+    """ --- End Get Q ----- """
 
 
 
-    """ Update Q -- """
+    """ Update Q --------------------------- """
     def update_q(self, current_node, next_node):
         """
         Q(current_node, next_node) =
         R(current_node, next_node) + Gamma * Max[Q(next_node, edges from next node)]
         """
 
-    """ ----------- """
+        # computed values
+        r       = self.get_r(current_node, next_node)
+        q_index = self.get_q(current_node, next_node)
 
+        # new q value
+        q = r + self.gamma * next_node.edges["q"][q_index]
 
-""" ----------------------------------- """
+        # get array indices
+        current_index = next_node.neighbors.index(current_node)
+        next_index = current_node.neighbors.index(next_node)
 
-
-
-
-
-
-
-
-
-
-
-
-"""
-    def __init__(self, game, alpha, epsilon, gamma):
-        self.game    = game
-        self.alpha   = alpha
-        self.epsilon = epsilon
-        self.gamma   = gamma
-
-        # board state and possible tile actions
-        self.states  = ["UN", "CN", "CF"]
-        self.actions = ["L",  "R", # x
-                        "U",  "D"  # y
-                        ]
-
-        # TODO: is this good?
-        # every tile (minus the dots) will have 2-4 possible actions (edges)
-        # each of these node-actions will have a q and r value
-        # two nodes share every node-action
-        x = self.game.grid_size[0]
-        y = self.game.grid_size[1]
-        self.num_nodes = x * y
-        self.num_edges = x * (x-1) + y * (y-1)
-        self.qValues = np.zeros((x * (x-1),  # x -
-                                 y * (y-1)   # y |
-                                 ))
-        self.rValues = np.zeros((x * (x-1),  # x -
-                                 y * (y-1)   # y |
-                                 ))
-
-        # possible rewards
-        self.rewards = {
-            self.states[0]: -100,
-            self.states[1]: -100,
-            self.states[2]:  100,
-            "move":            1,
-            "start":        -100
-        }
-
-        self.current_state = None
-        self.current_node  = None
-        self.current_color = ""
-
-        self.backtrack_index  = 0
-        self.solved_index     = 0
-        self.solve_value      = 0
-        self.tries            = 0
-
-"""
-
-   # """ Play Game """
-"""
-    def play_game(self):
-        if self.game.grid_size[0] != 3:
-            print("Can only solve with 3x3 grids!")
-            return
-
-        self.current_state = self.states[0]            # starting state
-        self.current_node  = self.game.start_position  # starting position
-
-        # while not reach the goal node
-        search.a_search(self.game)
+        # update the edge q-val for BOTH nodes! (as they are the same edge)
+        current_node.edges["q"][next_index] = q
+        next_node.edges["q"][current_index] = q
+    """ --- End Update Q --------------------------------- """
 
 
 
-    # TODO: set reward (R) and Q values for each node-edge action
-    def set_reward(self, current_node, next_node, reward):
-        if current_node[0] != next_node[0]:
-            self.rValues[0][]
-        return
+    """ Best Result -- """
+    def best_result(self):
+        # starting node
+        current_node = self.start_node
 
+        # reset filled squares
+        for x in range(self.grid_x):
+            for y in range(self.grid_y):
+                self.current_filled[x][y] = self.orig_filled[x][y]
 
+        # while not solved path
+        while True:
 
-    # TODO: set Q value for each node-edge action
-    def set_qval(self, current_node, next_node, val):
-        # TODO: uhm
-        return
+            # if no more paths
+            if not self.has_moves(current_node):
+                if DEBUG:
+                    print("Ran out of moves!")
+                return
 
-"""
+            # get node with the maximum q value
+            qvals  = current_node.edges["q"]
+            bestq  = max(qvals)
+            indexq = qvals.index(bestq)
+            next_node = current_node.neighbors[indexq]
 
-""" ----------------------------------- """
+            # if the new node is the goal, success!
+            if next_node.is_final:
+                if DEBUG:
+                    print("Reached the final node!\n")
+                return
 
+            # see if this position is filled
+            [x, y] = next_node.position
+            while self.current_filled[x][y]:
 
+                # remove filled value, check if no more moves
+                qvals.pop(indexq)
+                if len(qvals) == 0:
+                    if DEBUG:
+                        print("Ran out of moves!")
+                    return
 
+                # else set new next node
+                bestq = max(qvals)
+                indexq = qvals.index(bestq)
+                next_node = current_node.neighbors[indexq]
+                [x, y] = next_node.position
 
+                # if the new node is the goal, success!
+                if next_node.is_final:
+                    if DEBUG:
+                        print("Reached the final node!\n")
+                    return
 
+            # set new node and draw it in
+            current_node = next_node
+            self.game.draw_dot(
+                x,
+                y,
+                self.game.current_color
+            )
+            self.current_filled[x][y] = True
+    """ -------------- """
 
-
+""" --- End Q Learning Agent ----------------------------------------------------- """
