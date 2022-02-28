@@ -203,17 +203,22 @@ class Q_Learn_Agent:
             # find a not-filled node
             while True:
 
-                if self.game.tries % 10 == 0:
-                    self.epsilon = self.epsilon - 0.001
+                # TODO: Fix exp decay
+                # if self.game.tries % 10 == 0:
+                #     self.epsilon = self.epsilon - 0.001
 
-                if np.random.uniform(0, 1) < np.exp(self.gamma - 1):
-                    action = random.choice(current_node.actions)  # get a random action
-                    action_index = current_node.actions.index(action)  # get neighbor index from action
-                    next_node = current_node.neighbors[action_index]  # set neighbor as temp node
-                else:
-                    action = max(current_node.edges['r'])
-                    action_index = current_node.edges['r'].index(action)
-                    next_node = current_node.neighbors[action_index]
+                # if np.random.uniform(0, 1) < np.exp(self.gamma - 1):
+                #     action = random.choice(current_node.actions)  # get a random action
+                #     action_index = current_node.actions.index(action)  # get neighbor index from action
+                #     next_node = current_node.neighbors[action_index]  # set neighbor as temp node
+                # else:
+                #     action = max(current_node.edges['r'])
+                #     action_index = current_node.edges['r'].index(action)
+                #     next_node = current_node.neighbors[action_index]
+
+                action = random.choice(current_node.actions)       # get a random action
+                action_index = current_node.actions.index(action)  # get neighbor index from action
+                next_node = current_node.neighbors[action_index]   # set neighbor as temp node
 
                 # if the new node is the goal, success!
                 if next_node.is_final:

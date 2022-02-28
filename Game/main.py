@@ -15,7 +15,7 @@ import game as g
 GAME_FILE = 'levels/4x4.json'
 ALPHA   = 1
 EPSILON = 1
-GAMMA   = 1
+GAMMA   = .9
 LOOPS   = 1000
 
 """ Main ----------------------------------
