@@ -14,7 +14,7 @@ import game as g
 
 GAME_FILE = 'levels/4x4.json'
 ALPHA   = 1
-EPSILON = 1
+EPSILON = .5
 GAMMA   = 1
 LOOPS   = 1000
 
@@ -55,6 +55,8 @@ def handle_click_buttons(game, agent):
     if 550 > mouse_position[0]   > 400 and 225 > mouse_position[1] > 195:
         for i in range(agent.learning_loops):
             teach_agent(agent, game)
+        pygame.display.flip()
+        game.load_level()
 
     # result button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
