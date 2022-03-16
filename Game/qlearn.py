@@ -2,7 +2,7 @@ import numpy as np
 import random
 import sys
 
-DEBUG = False  # to print debug dialogue
+DEBUG = True  # to print debug dialogue
 
 """ Q Learn ----------------------------
     This file contains the RL algorithm.
@@ -65,6 +65,7 @@ class Q_Learn_Agent:
 
     """ Initialize Agent ----------------------- """
     def __init__(self, game, alpha, epsilon, gamma, rewards):
+        global DEBUG
         self.game    = game
         self.alpha   = alpha
         self.epsilon = epsilon
@@ -212,7 +213,8 @@ class Q_Learn_Agent:
                 if DEBUG:
                     print("Ran out of moves!")
                 last_node = self.node_path[-2]
-                self.set_q(last_node, current_node, "stuck")
+                #self.set_q(last_node, current_node, "move")
+                self.set_q_path("stuck")
                 return "stuck"
 
             # determine if greedy or exploratory
@@ -233,11 +235,13 @@ class Q_Learn_Agent:
                 self.current_filled[next_node.position[0]][next_node.position[1]] = True
                 if self.is_filled():
                     print("Reached goal, filled!")
-                    self.set_q(current_node, next_node, "reached_filled")
+                    self.set_q(current_node, next_node, "move")
+                    self.set_q_path("reached_filled")
                     return "reached_filled"
                 else:
                     print("Reached goal, empty.")
-                    self.set_q(current_node, next_node, "reached_empty")
+                    #self.set_q(current_node, next_node, "move")
+                    self.set_q_path("reached_empty")
                     return "reached_empty"
             else:
                 self.set_q(current_node, next_node, "move")
@@ -264,19 +268,39 @@ class Q_Learn_Agent:
             return False
         else:
             return True
-    """ --- End Has Moves --------------- """
+
+
+
+
+    """ Count Filled ------------------- - """
+    def count_filled(self):
+        size = 0
+        for x in range(self.grid_x):
+            for y in range(self.grid_y):
+                if self.current_filled[x][y]:
+                    size += 1
+        return size
+    """ --- End Is Filled --------------- """
 
 
 
     """ Is Filled ------------------- - """
     def is_filled(self):
         size = self.grid_x * self.grid_y
-        true = 0
-        for x in range(self.grid_x):
-            for y in range(self.grid_y):
-                if self.current_filled[x][y]:
-                    true += 1
-        return size == true
+        return size == self.count_filled()
+    """ --- End Is Filled --------------- """
+
+
+
+    """ Reward Function ------------------- - """
+    def reward_function(self, reward):
+        size = self.grid_x * self.grid_y
+        fill = self.count_filled()
+        ratio = float(fill/size)
+
+        reward_val = self.rewards[reward]
+
+        return reward_val * ratio
     """ --- End Is Filled --------------- """
 
 
@@ -286,7 +310,7 @@ class Q_Learn_Agent:
         """ https://en.wikipedia.org/wiki/Q-learning """
         cur_pos  = current_node.position      # current pos
         next_pos = next_node.position         # next pos
-        r        = self.rewards[reward]  # reward
+        r = self.reward_function(reward)      # reward
 
         # find optimal value, argmax_a(Q(s_{t+1}, a))
         optimal_pos = self.find_optimal(cur_pos, current_node.neighbors).position
@@ -301,6 +325,38 @@ class Q_Learn_Agent:
 
         # set the new q value
         self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
+    """ --- End Set Q ----- """
+
+
+
+    """ Set Q Path ----------------------------------- """
+    def set_q_path(self, reward):
+        # set new q-values for completed path
+        for i in range(len(self.node_path)-1):
+            # nodes
+            current_node = self.node_path[i]
+            next_node    = self.node_path[i+1]
+
+            # positions
+            cur_pos  = current_node.position
+            next_pos = next_node.position
+
+            # reward
+            r = self.reward_function(reward)
+
+            # find optimal value, argmax_a(Q(s_{t+1}, a))
+            optimal_pos = self.find_optimal(cur_pos, current_node.neighbors).position
+
+            # temporal difference
+            temp_diff = (
+                    r +           # reward
+                    self.gamma *  # discount factor
+                    self.qtable[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                    self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]          # old value
+            )
+
+            # set the new q value
+            self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
     """ --- End Set Q ----- """
 
 

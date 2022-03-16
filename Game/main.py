@@ -12,11 +12,11 @@ import game as g
 """
 
 # game constants
-GAME_FILE = 'levels/4x4.json'
-ALPHA   = 0.6
-EPSILON = 0.6
-GAMMA   = 0.6
-LOOPS   = 10
+GAME_FILE = 'levels/3x3.json'
+ALPHA   = 0.5
+EPSILON = 0.5
+GAMMA   = 0.5
+LOOPS   = 1000
 
 # tally the learning outcomes, for science
 res = {
@@ -27,10 +27,10 @@ res = {
 
 # can change this for experiments :)
 rewards = {
-    "move": 1,             # a grid space is filled
-    "stuck": -5,           # no more moves are left
-    "reached_empty": -5,   # goal is reached without filling the board
-    "reached_filled": 100  # goal is reached, board is filled
+    "move": 20,             # a grid space is filled
+    "stuck": -50,           # no more moves are left
+    "reached_empty": -30,   # goal is reached without filling the board
+    "reached_filled": 1000  # goal is reached, board is filled
 }
 
 """ Main ----------------------------------
