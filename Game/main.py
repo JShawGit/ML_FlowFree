@@ -20,7 +20,6 @@ LOOPS   = 10
 
 # tally the learning outcomes, for science
 res = {
-    "move": 0,  # a grid space is filled
     "stuck": 0,  # no more moves are left
     "reached_empty": 0,  # goal is reached without filling the board
     "reached_filled": 0  # goal is reached, board is filled
