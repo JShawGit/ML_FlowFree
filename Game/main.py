@@ -3,7 +3,7 @@ import time
 
 from global_vars import get_val
 import tester as t
-import qlearnold as q
+import qlearn as q
 import game as g
 
 """ Main -------------------------------------
@@ -12,11 +12,28 @@ import game as g
     https://github.com/hreso110100/FlowFree-Solver
 """
 
+# game constants
 GAME_FILE = 'levels/4x4.json'
 ALPHA   = 1
 EPSILON = 1
 GAMMA   = 1
 LOOPS   = 100
+
+# tally the learning outcomes, for science
+res = {
+    "move": 0,  # a grid space is filled
+    "stuck": 0,  # no more moves are left
+    "reached_empty": 0,  # goal is reached without filling the board
+    "reached_filled": 0  # goal is reached, board is filled
+}
+
+# can change this for experiments :)
+rewards = {
+    "move": 1,  # a grid space is filled
+    "stuck": -1,  # no more moves are left
+    "reached_empty": -1,  # goal is reached without filling the board
+    "reached_filled": 100  # goal is reached, board is filled
+}
 
 """ Main ----------------------------------
         This is the main program's function
@@ -26,7 +43,7 @@ def main(file):
     game = g.Game(file)
 
     # create learning agent
-    agent = q.Q_Learn_Agent(game, ALPHA, EPSILON, GAMMA, LOOPS)
+    agent = q.Q_Learn_Agent(game, ALPHA, EPSILON, GAMMA, rewards)
 
     # while the game is running
     while game.running:
@@ -53,14 +70,13 @@ def handle_click_buttons(game, agent):
 
     # learn button click handling
     if 550 > mouse_position[0]   > 400 and 225 > mouse_position[1] > 195:
-        for i in range(agent.learning_loops):
-            teach_agent(agent, game)
+        train_agent(agent, game)
         pygame.display.flip()
         game.load_level()
 
     # result button click handling
     elif 550 > mouse_position[0] > 400 and 270 > mouse_position[1] > 245:
-        result_agent(agent, game)
+        optimal_agent(agent, game)
 
     # exit button click handling
     elif 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
@@ -70,96 +86,52 @@ def handle_click_buttons(game, agent):
 
 
 
-""" Teach Agent --------- """
-def teach_agent(agent, game):
-    # sense exit
-    for event in pygame.event.get():
-        if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.QUIT:
-            mouse_position = pygame.mouse.get_pos()
-            if 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
-                print("Game exited!")
-                exit(0)
+""" Train Agent -------- """
+def train_agent(agent, game):
+    # iter through learning loops
+    for i in range(LOOPS):
+        # sense exit
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.QUIT:
+                mouse_position = pygame.mouse.get_pos()
+                if 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
+                    print("Game exited!")
+                    exit(0)
 
-    # reset board
-    game.tries += 1
-    pygame.display.flip()
-    game.load_level()
+        # reset board
+        game.tries += 1
+        pygame.display.flip()
+        game.load_level()
 
-    # learn
-    agent.learning_algo()
+        # learn
+        res[agent.learning()] += 1
 
-    # show results
-    game.clock.tick(get_val("fps"))
-    game.generate_fonts()
-""" ------------------- """
+        # show results
+        game.clock.tick(get_val("fps"))
+        game.generate_fonts()
+""" ----------------------- """
 
 
 
-""" Result Agent --------- """
-def result_agent(agent, game):
-    # sense exit
-    for event in pygame.event.get():
-        if event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.QUIT:
-            mouse_position = pygame.mouse.get_pos()
-            if 550 > mouse_position[0] > 400 and 325 > mouse_position[1] > 295:
-                print("Game exited!")
-                exit(0)
+""" Optimal Agent --------- """
+def optimal_agent(agent, game):
+    print(res)
 
     # reset board
     pygame.display.flip()
     game.load_level()
 
     # learn
-    agent.best_result()
+    agent.optimal_game()
 
     # show results
     game.clock.tick(get_val("fps"))
     game.generate_fonts()
 """ ------------------- """
-
-
-
-""" Test --------------------- """
-def test(n_games, iter_arr, file, pic, type):
-    if type == 0:
-        t.test_TF(
-            n_games,
-            iter_arr,
-            file,
-            ALPHA,
-            EPSILON,
-            GAMMA,
-            LOOPS,
-            pic
-        )
-
-    elif type == 1:
-        t.test_lengths(
-            n_games,
-            iter_arr,
-            file,
-            ALPHA,
-            EPSILON,
-            GAMMA,
-            LOOPS,
-            pic,
-
-        )
-""" ---------------------- """
 
 
 
 """ Run this if this file is ran """
 if __name__ == "__main__":
-    yes = False
-    if yes:
-        test(
-            1000,
-            [100, 500, 1000, 5000, 10000],
-            GAME_FILE,
-            "successes.png",
-            0
-        )
-    else:
-        main(GAME_FILE)
+    main(GAME_FILE)
 """ --------------------------- """
