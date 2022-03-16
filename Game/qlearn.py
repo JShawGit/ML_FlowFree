@@ -215,9 +215,18 @@ class Q_Learn_Agent:
                 self.set_q(last_node, current_node, "stuck")
                 return "stuck"
 
-            # get random next node
-            next_node = random.choice(neighboring_nodes)
-            self.node_path.append(next_node)
+            # determine if greedy or exploratory
+            prob = random.random()
+
+            # get optimal node
+            if prob > self.epsilon:
+                next_node = self.find_optimal(current_node.position, neighboring_nodes)
+                self.node_path.append(next_node)
+
+            # get random node
+            else:
+                next_node = random.choice(neighboring_nodes)
+                self.node_path.append(next_node)
 
             # check if goal is reached
             if next_node == self.final_node:

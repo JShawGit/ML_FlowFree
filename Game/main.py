@@ -1,5 +1,4 @@
 import pygame
-import time
 
 from global_vars import get_val
 import tester as t
@@ -14,10 +13,10 @@ import game as g
 
 # game constants
 GAME_FILE = 'levels/4x4.json'
-ALPHA   = 1
-EPSILON = 1
-GAMMA   = 1
-LOOPS   = 100
+ALPHA   = 0.6
+EPSILON = 0.6
+GAMMA   = 0.6
+LOOPS   = 10
 
 # tally the learning outcomes, for science
 res = {
@@ -29,9 +28,9 @@ res = {
 
 # can change this for experiments :)
 rewards = {
-    "move": 1,  # a grid space is filled
-    "stuck": -1,  # no more moves are left
-    "reached_empty": -1,  # goal is reached without filling the board
+    "move": 1,             # a grid space is filled
+    "stuck": -5,           # no more moves are left
+    "reached_empty": -5,   # goal is reached without filling the board
     "reached_filled": 100  # goal is reached, board is filled
 }
 
