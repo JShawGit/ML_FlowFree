@@ -1,3 +1,4 @@
+import numpy
 import numpy as np
 import random
 import sys
@@ -30,53 +31,54 @@ Actions:
 
 """
 
-
-
 """ Node -----------------------------------------
         This is creates a node, which is each cell
         within a grid..
 """
-class Node:
 
+
+class Node:
     """ Initialize Node --------------------------------------- """
+
     def __init__(self, pos, start, final):
-        self.position  = pos  # search current position
-        self.neighbors = []   # search neighbors
+        self.position = pos  # search current position
+        self.neighbors = []  # search neighbors
 
         self.edges = {  # edges leading from/to neighbors
             "q": [],
             "r": []
         }
 
-        self.is_start  = start   # if is starting node
-        self.is_final  = final   # if is final, goal node
+        self.is_start = start  # if is starting node
+        self.is_final = final  # if is final, goal node
 
         self.actions = []  # actions available at node
-        self.r       = 0   # node reward
+        self.r = 0  # node reward
+
 
 """ --- End Node --------------------------------------- """
-
-
 
 """ Q Learning ----------------------------
         Will learn how to connect the dots.
 """
-class Q_Learn_Agent:
 
+
+class Q_Learn_Agent:
     """ Initialize Agent ----------------------- """
+
     def __init__(self, game, alpha, epsilon, gamma, rewards):
         global DEBUG
-        self.game    = game
-        self.alpha   = alpha
+        self.game = game
+        self.alpha = alpha
         self.epsilon = epsilon
-        self.gamma   = gamma
+        self.gamma = gamma
         self.rewards = rewards
 
         self.grid_x = self.game.grid_size[0]  # grid x len
         self.grid_y = self.game.grid_size[1]  # grid y len
 
         # filled squares
-        self.orig_filled    = np.zeros((self.grid_x, self.grid_y), dtype=bool)
+        self.orig_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
         self.current_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
 
         # path of nodes for current iteration
@@ -88,8 +90,8 @@ class Q_Learn_Agent:
         # Q learning
         self.qtable = {}  # a state-action dictionary
 
-        self.grid_nodes = []       # store all grid-nodes here
-        self.generate_nodes()      # get nodes
+        self.grid_nodes = []  # store all grid-nodes here
+        self.generate_nodes()  # get nodes
         self.generate_neighbors()  # get node-neighbors
 
         # get the start node
@@ -102,35 +104,48 @@ class Q_Learn_Agent:
 
     """ --- End Init ------------------------------ """
 
-
-
     """ Generate Nodes -- """
+
     def generate_nodes(self):
 
-        # for every square in the grid
-        for x in range(self.grid_x):
-            for y in range(self.grid_y):
+        # Clearing the Visited Cells
+        self.game.visited_cells = []
 
-                # if start node
-                if [x, y] == self.game.start_position:
-                    self.grid_nodes.append(Node([x, y], True, False))
-                    self.orig_filled[x][y]    = True
-                    self.current_filled[x][y] = True
+        # Looping through all the colors
+        for color in self.game.colors:
+            # Setting local object start/final positions
+            self.start_pos = numpy.argwhere(self.game.grid_array == color).tolist()[0]
+            self.final_pos = numpy.argwhere(self.game.grid_array == color).tolist()[1]
+            self.game.visited_cells.append(self.start_pos)
 
-                # if goal node
-                elif [x, y] == self.final_pos:
-                    self.grid_nodes.append(Node([x, y], False, True))
-                    self.orig_filled[x][y]    = True
-                    self.current_filled[x][y] = True
+            # for every square in the grid
+            for x in range(self.grid_x):
+                for y in range(self.grid_y):
 
-                # if empty node
-                else:
-                    self.grid_nodes.append(Node([x, y], False, False))
+                    # if start node
+                    if [x, y] == self.start_pos:
+                        self.grid_nodes.append(Node([x, y], True, False))
+                        self.orig_filled[x][y] = True
+                        self.current_filled[x][y] = True
+
+                    # if goal node
+                    elif [x, y] == self.final_pos:
+                        self.grid_nodes.append(Node([x, y], False, True))
+                        self.orig_filled[x][y] = True
+                        self.current_filled[x][y] = True
+
+                    # if empty node
+                    else:
+                        self.grid_nodes.append(Node([x, y], False, False))
+
+        # Resetting local object start/final position to be with starting color
+        self.start_pos = self.game.start_position
+        self.final_pos = self.game.final_position
+
     """ --- End Gen Nodes --------------- """
 
-
-
     """ Generate Neighbors -- """
+
     def generate_neighbors(self):
 
         # for every node, get neighbors
@@ -142,7 +157,7 @@ class Q_Learn_Agent:
                 [x - 1, y, 'L'],  # left
                 [x + 1, y, 'R'],  # right
                 [x, y - 1, 'U'],  # up
-                [x, y + 1, 'D']   # down
+                [x, y + 1, 'D']  # down
             ]
 
             # append node to q-val table
@@ -171,11 +186,11 @@ class Q_Learn_Agent:
 
                     # append state-action to Q-table
                     self.qtable[(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
+
     """ --- End Gen Neighbors ------------------- """
 
-
-
     """ Skip Neighbor -------------- """
+
     def skip_neighbor(self, next_state):
         # skip if out of bounds
         if next_state[0] > self.grid_x - 1 \
@@ -187,18 +202,18 @@ class Q_Learn_Agent:
         # don't skip
         else:
             return False
+
     """ --- End Skip Neighbor ------------------------- """
 
-
-
     """ Learning ------------------- """
+
     def learning(self):
         current_node = self.start_node  # starting node
         self.node_path = [current_node]  # keep a list of nodes in this path
 
         # Increase Greedyness as we learn
         if (self.game.tries % 1000 == 0) and (self.epsilon >= 0):
-            self.epsilon = self.epsilon-0.1
+            self.epsilon = self.epsilon - 0.1
 
         # reset filled squares
         self.current_filled = self.orig_filled.copy()
@@ -217,9 +232,10 @@ class Q_Learn_Agent:
                 if DEBUG:
                     print("Ran out of moves!")
                 last_node = self.node_path[-2]
-                #self.set_q(last_node, current_node, "move")
+                # self.set_q(last_node, current_node, "move")
                 self.set_q_path("stuck")
-                return "stuck"
+                return_val = "stuck"
+                break
 
             # determine if greedy or exploratory
             prob = random.random()
@@ -241,24 +257,36 @@ class Q_Learn_Agent:
                     print("Reached goal, filled!")
                     self.set_q(current_node, next_node, "move")
                     self.set_q_path("reached_filled")
-                    return "reached_filled"
+                    return_val = "reached_filled"
+                    break
                 else:
                     print("Reached goal, empty.")
-                    #self.set_q(current_node, next_node, "move")
+                    # self.set_q(current_node, next_node, "move")
                     self.set_q_path("reached_empty")
-                    return "reached_empty"
+                    return_val = "reached_empty"
+                    break
             else:
                 self.set_q(current_node, next_node, "move")
                 self.game.draw_dot(next_node.position[0], next_node.position[1], self.game.current_color)
                 self.current_filled[next_node.position[0]][next_node.position[1]] = True
                 current_node = next_node
+
+        # Changing Current Color and starting/ending positions
+        self.game.solved_index = self.game.solved_index + 1
+        self.game.current_color = self.game.colors[self.game.solved_index]
+        self.game.start_position = numpy.argwhere(self.game.grid_array == self.game.current_color).tolist()[0]
+        self.start_pos = self.game.start_position
+        self.game.final_position = numpy.argwhere(self.game.grid_array == self.game.current_color).tolist()[1]
+        self.final_pos = self.game.final_position
+
+        return return_val
+
     """ --- End Learning ----------- """
 
-
-
     """ Has Moves -------- """
+
     def has_moves(self, node):
-        no_move     = 0
+        no_move = 0
         n_neighbors = len(node.neighbors)
 
         # see if all neighbors are filled
@@ -273,10 +301,8 @@ class Q_Learn_Agent:
         else:
             return True
 
-
-
-
     """ Count Filled ------------------- - """
+
     def count_filled(self):
         size = 0
         for x in range(self.grid_x):
@@ -284,65 +310,65 @@ class Q_Learn_Agent:
                 if self.current_filled[x][y]:
                     size += 1
         return size
+
     """ --- End Is Filled --------------- """
 
-
-
     """ Is Filled ------------------- - """
+
     def is_filled(self):
         size = self.grid_x * self.grid_y
         return size == self.count_filled()
+
     """ --- End Is Filled --------------- """
 
-
-
     """ Reward Function ------------------- - """
+
     def reward_function(self, reward):
         size = self.grid_x * self.grid_y
         fill = self.count_filled()
-        ratio = float(fill/size)
+        ratio = float(fill / size)
 
         reward_val = self.rewards[reward]
 
         return reward_val * ratio
+
     """ --- End Is Filled --------------- """
 
-
-
     """ Set Q ------------------------------------ """
+
     def set_q(self, current_node, next_node, reward):
         """ https://en.wikipedia.org/wiki/Q-learning """
-        cur_pos  = current_node.position      # current pos
-        next_pos = next_node.position         # next pos
-        r = self.reward_function(reward)      # reward
+        cur_pos = current_node.position  # current pos
+        next_pos = next_node.position  # next pos
+        r = self.reward_function(reward)  # reward
 
         # find optimal value, argmax_a(Q(s_{t+1}, a))
         optimal_pos = self.find_optimal(cur_pos, current_node.neighbors).position
 
         # temporal difference
         temp_diff = (
-                r +           # reward
+                r +  # reward
                 self.gamma *  # discount factor
                 self.qtable[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
-                self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]          # old value
+                self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
         )
 
         # set the new q value
         self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
+
     """ --- End Set Q ----- """
 
-
-
     """ Set Q Path ----------------------------------- """
+
     def set_q_path(self, reward):
         # set new q-values for completed path
-        for i in range(len(self.node_path)-1):
+        for i in range(len(self.node_path) - 1):
             # nodes
             current_node = self.node_path[i]
-            next_node    = self.node_path[i+1]
+            next_node = self.node_path[i + 1]
 
             # positions
-            cur_pos  = current_node.position
+            cur_pos = current_node.position
             next_pos = next_node.position
 
             # reward
@@ -353,21 +379,21 @@ class Q_Learn_Agent:
 
             # temporal difference
             temp_diff = (
-                    r +           # reward
+                    r +  # reward
                     self.gamma *  # discount factor
                     self.qtable[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
-                    self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]          # old value
+                    self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
             )
 
             # set the new q value
             self.qtable[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
+
     """ --- End Set Q ----- """
 
-
-
     """ Find Optimal ----------------------- """
+
     def find_optimal(self, cur_pos, neighbors):
-        optimal      = np.NINF
+        optimal = np.NINF
         optimal_node = None
         for neighbor in neighbors:
             neigh_pos = neighbor.position
@@ -379,13 +405,13 @@ class Q_Learn_Agent:
                 optimal_node = neighbor
 
         return optimal_node
+
     """ --- End Find Optimal ---------------- """
 
-
-
     """ Optimal Game ------------ """
+
     def optimal_game(self):
-        current_node = self.start_node   # starting node
+        current_node = self.start_node  # starting node
         self.node_path = [current_node]  # keep a list of nodes in this path
 
         # reset filled squares
@@ -424,6 +450,8 @@ class Q_Learn_Agent:
                 self.game.draw_dot(next_node.position[0], next_node.position[1], self.game.current_color)
                 self.current_filled[next_node.position[0]][next_node.position[1]] = True
                 current_node = next_node
+
     """ -- End Optimal Game ------------ """
+
 
 """ --- End Q Learning Agent ----------------------------------------------------- """
