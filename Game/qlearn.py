@@ -196,6 +196,10 @@ class Q_Learn_Agent:
         current_node = self.start_node  # starting node
         self.node_path = [current_node]  # keep a list of nodes in this path
 
+        # Increase Greedyness as we learn
+        if (self.game.tries % 1000 == 0) and (self.epsilon >= 0):
+            self.epsilon = self.epsilon-0.1
+
         # reset filled squares
         self.current_filled = self.orig_filled.copy()
 
@@ -205,7 +209,7 @@ class Q_Learn_Agent:
             neighboring_nodes = np.copy(current_node.neighbors)
             for node in neighboring_nodes:
                 x, y = node.position
-                if node != self.final_node and self.current_filled[x][y]:
+                if (node != self.final_node) and self.current_filled[x][y]:
                     neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
 
             # if no playable actions, failure
@@ -363,7 +367,7 @@ class Q_Learn_Agent:
 
     """ Find Optimal ----------------------- """
     def find_optimal(self, cur_pos, neighbors):
-        optimal      = -sys.maxsize - 1
+        optimal      = np.NINF
         optimal_node = None
         for neighbor in neighbors:
             neigh_pos = neighbor.position
@@ -402,7 +406,7 @@ class Q_Learn_Agent:
                     print("Ran out of moves!")
                 return "stuck"
 
-            # get random next node
+            # get optimal next node
             next_node = self.find_optimal(current_node.position, neighboring_nodes)
             self.node_path.append(next_node)
 

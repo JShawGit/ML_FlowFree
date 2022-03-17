@@ -14,7 +14,7 @@ import game as g
 # game constants
 GAME_FILE = 'levels/3x3.json'
 ALPHA   = 0.5
-EPSILON = 0.5
+EPSILON = 0.9
 GAMMA   = 0.5
 LOOPS   = 1000
 
