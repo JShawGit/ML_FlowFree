@@ -218,66 +218,85 @@ class Q_Learn_Agent:
         # reset filled squares
         self.current_filled = self.orig_filled.copy()
 
-        # while not solved path
-        while True:
-            # get all playable actions (open nodes)
-            neighboring_nodes = np.copy(current_node.neighbors)
-            for node in neighboring_nodes:
-                x, y = node.position
-                if (node != self.final_node) and self.current_filled[x][y]:
-                    neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
+        for color in self.game.colors:
 
-            # if no playable actions, failure
-            if len(neighboring_nodes) == 0:
-                if DEBUG:
-                    print("Ran out of moves!")
-                last_node = self.node_path[-2]
-                # self.set_q(last_node, current_node, "move")
-                self.set_q_path("stuck")
-                return_val = "stuck"
-                break
+            #TODO: Change starting/current nodes and end nodes after loop
+            #current_node =
 
-            # determine if greedy or exploratory
-            prob = random.random()
+            # Changing Current Color and starting/ending positions
+            self.game.solved_index = self.game.solved_index + 1
+            self.game.current_color = color
+            self.game.start_position = numpy.argwhere(self.game.grid_array == color).tolist()[0]
+            self.start_pos = self.game.start_position
+            self.game.final_position = numpy.argwhere(self.game.grid_array == color).tolist()[1]
+            self.final_pos = self.game.final_position
 
-            # get optimal node
-            if prob > self.epsilon:
-                next_node = self.find_optimal(current_node.position, neighboring_nodes)
-                self.node_path.append(next_node)
+            # while not solved path
+            while True:
+                # get all playable actions (open nodes)
+                neighboring_nodes = np.copy(current_node.neighbors)
+                for node in neighboring_nodes:
+                    x, y = node.position
+                    if (node != self.final_node) and self.current_filled[x][y]:
+                        neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
 
-            # get random node
-            else:
-                next_node = random.choice(neighboring_nodes)
-                self.node_path.append(next_node)
-
-            # check if goal is reached
-            if next_node == self.final_node:
-                self.current_filled[next_node.position[0]][next_node.position[1]] = True
-                if self.is_filled():
-                    print("Reached goal, filled!")
-                    self.set_q(current_node, next_node, "move")
-                    self.set_q_path("reached_filled")
-                    return_val = "reached_filled"
+                # if no playable actions, failure
+                if len(neighboring_nodes) == 0:
+                    if DEBUG:
+                        print("Ran out of moves!")
+                    last_node = self.node_path[-2]
+                    # self.set_q(last_node, current_node, "move")
+                    self.set_q_path("stuck")
+                    return_val = "stuck"
                     break
+
+                # determine if greedy or exploratory
+                prob = random.random()
+
+                # get optimal node
+                if prob > self.epsilon:
+                    next_node = self.find_optimal(current_node.position, neighboring_nodes)
+                    self.node_path.append(next_node)
+
+                # get random node
                 else:
-                    print("Reached goal, empty.")
-                    # self.set_q(current_node, next_node, "move")
-                    self.set_q_path("reached_empty")
-                    return_val = "reached_empty"
-                    break
-            else:
-                self.set_q(current_node, next_node, "move")
-                self.game.draw_dot(next_node.position[0], next_node.position[1], self.game.current_color)
-                self.current_filled[next_node.position[0]][next_node.position[1]] = True
-                current_node = next_node
+                    next_node = random.choice(neighboring_nodes)
+                    self.node_path.append(next_node)
 
-        # Changing Current Color and starting/ending positions
-        self.game.solved_index = self.game.solved_index + 1
-        self.game.current_color = self.game.colors[self.game.solved_index]
-        self.game.start_position = numpy.argwhere(self.game.grid_array == self.game.current_color).tolist()[0]
-        self.start_pos = self.game.start_position
-        self.game.final_position = numpy.argwhere(self.game.grid_array == self.game.current_color).tolist()[1]
-        self.final_pos = self.game.final_position
+                # check if goal is reached
+                if next_node == self.final_node:
+                    self.current_filled[next_node.position[0]][next_node.position[1]] = True
+                    if self.is_filled():
+                        print("Reached goal, filled!")
+                        self.set_q(current_node, next_node, "move")
+                        self.set_q_path("reached_filled")
+                        return_val = "reached_filled"
+                        break
+                    else:
+                        print("Reached goal, empty.")
+                        # self.set_q(current_node, next_node, "move")
+                        self.set_q_path("reached_empty")
+                        return_val = "reached_empty"
+                        break
+                else:
+                    self.set_q(current_node, next_node, "move")
+                    self.game.draw_dot(next_node.position[0], next_node.position[1], self.game.current_color)
+                    self.current_filled[next_node.position[0]][next_node.position[1]] = True
+                    current_node = next_node
+
+            self.start_node.is_start = False
+            self.final_node.is_final = False
+
+            # get the start node
+            self.start_node = [x for x in self.grid_nodes if x.is_start]
+            self.start_node = self.start_node[0]
+            current_node = self.start_node
+
+            # get the final node
+            self.final_node = [x for x in self.grid_nodes if x.is_final]
+            self.final_node = self.final_node[0]
+
+
 
         return return_val
 
@@ -378,6 +397,7 @@ class Q_Learn_Agent:
             optimal_pos = self.find_optimal(cur_pos, current_node.neighbors).position
 
             # temporal difference
+            print('Current Pos: ', cur_pos, ' Next Pos: ', next_pos)
             temp_diff = (
                     r +  # reward
                     self.gamma *  # discount factor

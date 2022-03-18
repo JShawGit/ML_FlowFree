@@ -27,9 +27,9 @@ res = {
 
 # can change this for experiments :)
 rewards = {
-    "move": 20,             # a grid space is filled
+    "move": -5,             # a grid space is filled
     "stuck": -50,           # no more moves are left
-    "reached_empty": -30,   # goal is reached without filling the board
+    "reached_empty": 30,   # goal is reached without filling the board
     "reached_filled": 1000  # goal is reached, board is filled
 }
 
