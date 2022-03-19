@@ -103,17 +103,16 @@ def train_agent(agent, game):
 
         # reset board
         game.tries += 1
-        #pygame.display.flip()
+        pygame.display.flip()
         game.load_level()
 
         # learn
         res[agent.learning()] += 1
 
-    pygame.display.flip()
-    # show results
-    game.clock.tick(get_val("fps"))
+        # show results
+        game.clock.tick(get_val("fps"))
+        game.generate_fonts()
 
-    game.generate_fonts()
 
 
 """ ----------------------- """
