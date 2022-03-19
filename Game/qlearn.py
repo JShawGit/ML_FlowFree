@@ -288,8 +288,8 @@ class Q_Learn_Agent:
 
                 # if no playable actions, failure
                 if len(neighboring_nodes) == 0:
-                    if DEBUG:
-                        print("Ran out of moves!")
+                   # if DEBUG:
+                       # print("Ran out of moves!")
                     # last_node = self.node_path[-2]
                     # self.set_q(last_node, current_node, "move")
                     self.set_q_path("stuck", color)
@@ -313,13 +313,13 @@ class Q_Learn_Agent:
                 if next_node == self.final_node:
                     self.current_filled[next_node.position[0]][next_node.position[1]] = True
                     if self.is_filled():
-                        print("Reached goal, filled!")
+                        # print("Reached goal, filled!")
                         self.set_q(current_node, next_node, "move", color)
                         self.set_q_path("reached_filled", color)
                         return_val = "reached_filled"
                         break
                     else:
-                        print("Reached goal, empty.")
+                        # print("Reached goal, empty.")
                         # self.set_q(current_node, next_node, "move")
                         self.set_q_path("reached_empty", color)
                         return_val = "reached_empty"
@@ -606,6 +606,8 @@ class Q_Learn_Agent:
                     neighboring_nodes = np.copy(current_node.neighbors)
                 except:
                     print("Neighbors Error")
+
+                    # TODO: Implement Path Checker
 
                 for node in neighboring_nodes:
                     x, y = node.position

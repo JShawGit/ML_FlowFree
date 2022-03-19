@@ -14,9 +14,9 @@ import game as g
 # game constants
 GAME_FILE = 'levels/3x3.json'
 ALPHA = 0.5
-EPSILON = 0.9
+EPSILON = 1.0
 GAMMA = 0.5
-LOOPS = 1000
+LOOPS = 5000
 
 # tally the learning outcomes, for science
 res = {
@@ -27,9 +27,9 @@ res = {
 
 # can change this for experiments :)
 rewards = {
-    "move": 0,  # a grid space is filled
-    "stuck": -50,  # no more moves are left
-    "reached_empty": 25,  # goal is reached without filling the board
+    "move": -5,  # a grid space is filled
+    "stuck": -5,  # no more moves are left
+    "reached_empty": 5,  # goal is reached without filling the board
     "reached_filled": 0  # goal is reached, board is filled
 }
 
@@ -109,9 +109,11 @@ def train_agent(agent, game):
         # learn
         res[agent.learning()] += 1
 
-        # show results
-        game.clock.tick(get_val("fps"))
-        game.generate_fonts()
+    pygame.display.flip()
+    # show results
+    game.clock.tick(get_val("fps"))
+    game.generate_fonts()
+
 
 
 
