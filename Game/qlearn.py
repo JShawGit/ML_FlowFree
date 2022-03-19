@@ -105,6 +105,25 @@ class Q_Learn_Agent:
         self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
 
+
+    """ --- End Init ------------------------------ """
+
+    """ Reset Nodes -- """
+
+    def reset_nodes(self):
+        self.grid_nodes = []  # store all grid-nodes here
+        self.generate_nodes()  # get nodes
+        self.generate_neighbors()  # get node-neighbors
+
+        # get the start node
+        self.start_node = [x for x in self.grid_nodes if x.is_start]
+        self.start_node = self.start_node[0]
+
+        # get the final node
+        self.final_node = [x for x in self.grid_nodes if x.is_final]
+        self.final_node = self.final_node[0]
+
+
     """ --- End Init ------------------------------ """
 
     """ Generate Nodes -- """
@@ -211,28 +230,44 @@ class Q_Learn_Agent:
     """ Learning ------------------- """
 
     def learning(self):
-        current_node = self.start_node  # starting node
-        #self.node_path = [current_node]  # keep a list of nodes in this path
 
-        # Increase Greedyness as we learn
-        if (self.game.tries % 1000 == 0) and (self.epsilon >= 0):
-            self.epsilon = self.epsilon - 0.1
+        # Check to see if its the First Run
+        if self.game.tries <= 1:
 
-        # reset filled squares
-        self.current_filled = self.orig_filled.copy()
+            current_node = self.start_node  # starting node
 
+            # Increase Greedyness as we learn
+            if (self.game.tries % 1000 == 0) and (self.epsilon >= 0):
+                self.epsilon = self.epsilon - 0.1
+
+            # reset filled squares
+            self.current_filled = self.orig_filled.copy()
+        else:
+            # Reset Nodes
+            self.reset_nodes()
+            # Get current node
+            current_node = self.start_node # starting node
+
+            # Increase Greedyness as we learn
+            if (self.game.tries % 1000 == 0) and (self.epsilon >= 0):
+                self.epsilon = self.epsilon - 0.1
+
+            # reset filled squares
+            self.current_filled = self.orig_filled.copy()
+
+        # Start looping through colors
         for color in self.game.colors:
 
-            # TODO: Change starting/current nodes and end nodes after loop
+            # Reset node path
             self.node_path = [current_node]
 
             # Changing Current Color and starting/ending positions
-            self.game.solved_index = self.game.solved_index + 1
+            # self.game.solved_index = self.game.solved_index + 1
             self.game.current_color = color
-            self.game.start_position = numpy.argwhere(self.game.grid_array == color).tolist()[0]
-            self.start_pos = self.game.start_position
-            self.game.final_position = numpy.argwhere(self.game.grid_array == color).tolist()[1]
-            self.final_pos = self.game.final_position
+            # self.game.start_position = numpy.argwhere(self.game.grid_array == color).tolist()[0]
+            self.start_pos = numpy.argwhere(self.game.grid_array == color).tolist()[0]
+            # self.game.final_position = numpy.argwhere(self.game.grid_array == color).tolist()[1]
+            self.final_pos = numpy.argwhere(self.game.grid_array == color).tolist()[1]
 
             # while not solved path
             while True:
