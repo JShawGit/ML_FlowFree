@@ -96,7 +96,6 @@ class Q_Learn_Agent:
         self.qtable_green = {}  # a state-action dictionary
         self.qtable_yellow = {}  # a state-action dictionary
 
-
         self.grid_nodes = []  # store all grid-nodes here
         self.generate_nodes()  # get nodes
         self.generate_neighbors(False)  # get node-neighbors
@@ -279,7 +278,7 @@ class Q_Learn_Agent:
 
                 for node in neighboring_nodes:
                     x, y = node.position
-                    if node != self.final_node and self.current_filled[x][y]:
+                    if (node.position != self.final_pos) and self.current_filled[x][y]:
                         neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
 
                 # print('Current Node:  ', current_node.position)
@@ -349,8 +348,8 @@ class Q_Learn_Agent:
             if self.final_node:
                 self.final_node = self.final_node[0]
 
-        if self.game.tries == 999:
-            print('End')
+            # reset filled squares
+            self.current_filled = self.orig_filled.copy()
 
         return return_val
 
@@ -610,7 +609,7 @@ class Q_Learn_Agent:
 
                 for node in neighboring_nodes:
                     x, y = node.position
-                    if node != self.final_node and self.current_filled[x][y]:
+                    if (node.position != self.final_pos) and self.current_filled[x][y]:
                         neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
 
                 # if no playable actions, failure
@@ -623,27 +622,28 @@ class Q_Learn_Agent:
                     return_val = "stuck"
                     break
 
+                print('Current Node: ', current_node.position)
                 # get optimal node
                 next_node = self.find_optimal(current_node.position, neighboring_nodes, color)
                 self.node_path.append(next_node)
 
                 # check if goal is reached
-                if next_node == self.final_node:
+                if next_node.position == self.final_pos:
                     self.current_filled[next_node.position[0]][next_node.position[1]] = True
                     if self.is_filled():
                         print("Reached goal, filled!")
-                        self.set_q(current_node, next_node, "move", color)
-                        self.set_q_path("reached_filled", color)
+                        # self.set_q(current_node, next_node, "move", color)
+                        # self.set_q_path("reached_filled", color)
                         return_val = "reached_filled"
                         break
                     else:
                         print("Reached goal, empty.")
                         # self.set_q(current_node, next_node, "move")
-                        self.set_q_path("reached_empty", color)
+                        #self.set_q_path("reached_empty", color)
                         return_val = "reached_empty"
                         break
                 else:
-                    self.set_q(current_node, next_node, "move", color)
+                    # self.set_q(current_node, next_node, "move", color)
                     self.game.draw_dot(next_node.position[0], next_node.position[1], self.game.current_color)
                     self.current_filled[next_node.position[0]][next_node.position[1]] = True
                     current_node = next_node
