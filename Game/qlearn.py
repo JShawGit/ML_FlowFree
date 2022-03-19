@@ -1,3 +1,5 @@
+import time
+
 import numpy
 import numpy as np
 import random
@@ -43,6 +45,7 @@ class Node:
     def __init__(self, pos, start, final):
         self.position = pos  # search current position
         self.neighbors = []  # search neighbors
+        self.isfilled = False
 
         self.edges = {  # edges leading from/to neighbors
             "q": [],
@@ -209,7 +212,7 @@ class Q_Learn_Agent:
 
     def learning(self):
         current_node = self.start_node  # starting node
-        self.node_path = [current_node]  # keep a list of nodes in this path
+        #self.node_path = [current_node]  # keep a list of nodes in this path
 
         # Increase Greedyness as we learn
         if (self.game.tries % 1000 == 0) and (self.epsilon >= 0):
@@ -220,8 +223,8 @@ class Q_Learn_Agent:
 
         for color in self.game.colors:
 
-            #TODO: Change starting/current nodes and end nodes after loop
-            #current_node =
+            # TODO: Change starting/current nodes and end nodes after loop
+            self.node_path = [current_node]
 
             # Changing Current Color and starting/ending positions
             self.game.solved_index = self.game.solved_index + 1
@@ -234,17 +237,28 @@ class Q_Learn_Agent:
             # while not solved path
             while True:
                 # get all playable actions (open nodes)
-                neighboring_nodes = np.copy(current_node.neighbors)
+                try:
+                    neighboring_nodes = np.copy(current_node.neighbors)
+                except:
+                    print("Neighbors Error")
+                    time.sleep(10000)
+
                 for node in neighboring_nodes:
                     x, y = node.position
-                    if (node != self.final_node) and self.current_filled[x][y]:
+                    if node != self.final_node and self.current_filled[x][y]:
                         neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
+
+                print('Current Node:  ', current_node.position)
+                for node in neighboring_nodes:
+                    print('Neighbor Node: ', node.position)
+                print()
+
 
                 # if no playable actions, failure
                 if len(neighboring_nodes) == 0:
                     if DEBUG:
                         print("Ran out of moves!")
-                    last_node = self.node_path[-2]
+                    #last_node = self.node_path[-2]
                     # self.set_q(last_node, current_node, "move")
                     self.set_q_path("stuck")
                     return_val = "stuck"
@@ -289,14 +303,18 @@ class Q_Learn_Agent:
 
             # get the start node
             self.start_node = [x for x in self.grid_nodes if x.is_start]
-            self.start_node = self.start_node[0]
-            current_node = self.start_node
+
+            # Checking to See if we are out of colors
+            if self.start_node:
+                self.start_node = self.start_node[0]
+                current_node = self.start_node
 
             # get the final node
             self.final_node = [x for x in self.grid_nodes if x.is_final]
-            self.final_node = self.final_node[0]
 
-
+            # Checking to See if we are out of colors
+            if self.final_node:
+                self.final_node = self.final_node[0]
 
         return return_val
 
@@ -397,7 +415,7 @@ class Q_Learn_Agent:
             optimal_pos = self.find_optimal(cur_pos, current_node.neighbors).position
 
             # temporal difference
-            print('Current Pos: ', cur_pos, ' Next Pos: ', next_pos)
+            #print('Current Pos: ', cur_pos, ' Next Pos: ', next_pos)
             temp_diff = (
                     r +  # reward
                     self.gamma *  # discount factor
