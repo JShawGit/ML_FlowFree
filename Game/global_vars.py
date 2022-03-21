@@ -20,7 +20,7 @@ VARS = {
     # game constants, change for different results
     "font":             "arialblack",
     "font_sz":          40,
-    "fps":              60,
+    "fps":              900,
     "icon":             "assets/icon.png",
     "title":            "Flow Free RL Project",
     "window_width":     600,
