@@ -12,7 +12,7 @@ import game as g
 """
 
 # game constants
-GAME_FILE = 'levels/3x3.json'
+GAME_FILE = 'levels/test.json'
 ALPHA = 0.5
 EPSILON = 1.0
 GAMMA = 0.5
@@ -21,23 +21,25 @@ LOOPS = 5000
 # tally the learning outcomes, for science
 res = {
     "stuck": 0,  # no more moves are left
+    "block": 0,  # if path blocks another path
     "reached_empty": 0,  # goal is reached without filling the board
     "reached_filled": 0  # goal is reached, board is filled
 }
 
 # can change this for experiments :)
 rewards = {
-    "move": -5,  # a grid space is filled
-    "stuck": -5,  # no more moves are left
-    "reached_empty": 5,  # goal is reached without filling the board
-    "reached_filled": 0  # goal is reached, board is filled
+    "move":             0,  # a grid space is filled
+    "stuck":           -5,  # no more moves are left
+    "block":          -20,  # if a path blocks another color
+    "reached_empty":    5,  # goal is reached without filling the board
+    "reached_filled": 1000   # goal is reached, board is filled
 }
+
+
 
 """ Main ----------------------------------
         This is the main program's function
 """
-
-
 def main(file):
     # create the game
     game = g.Game(file)
@@ -59,13 +61,11 @@ def main(file):
 
         pygame.display.flip()
         game.clock.tick(get_val("fps"))
-
-
 """ ----------------------------------- """
 
+
+
 """ Handle Click Buttons --------- """
-
-
 def handle_click_buttons(game, agent):
     mouse_position = pygame.mouse.get_pos()
 
@@ -87,9 +87,9 @@ def handle_click_buttons(game, agent):
 
 """ -------------------- """
 
+
+
 """ Train Agent -------- """
-
-
 def train_agent(agent, game):
     # iter through learning loops
     for i in range(LOOPS):
@@ -109,19 +109,13 @@ def train_agent(agent, game):
         # learn
         res[agent.learning()] += 1
 
-    pygame.display.flip()
-    # show results
-    game.clock.tick(get_val("fps"))
-    game.generate_fonts()
-
-
-
-
+        game.clock.tick(get_val("fps"))
+        game.generate_fonts()
 """ ----------------------- """
 
+
+
 """ Optimal Agent --------- """
-
-
 def optimal_agent(agent, game):
     print(res)
 
@@ -135,9 +129,9 @@ def optimal_agent(agent, game):
     # show results
     game.clock.tick(get_val("fps"))
     game.generate_fonts()
-
-
 """ ------------------- """
+
+
 
 """ Run this if this file is ran """
 if __name__ == "__main__":
