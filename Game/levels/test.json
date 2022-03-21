@@ -1,0 +1,50 @@
+{
+  "name": "Test",
+  "width":  4,
+  "height": 4,
+  "colors": [
+    "RED"
+  ],
+  "dots": [
+    {
+      "color": "RED",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "color": "RED",
+      "x": 1,
+      "y": 3
+    },
+    {
+      "color": "BLUE",
+      "x": 2,
+      "y": 1
+    },
+    {
+      "color": "BLUE",
+      "x": 2,
+      "y": 3
+    },
+    {
+      "color": "GREEN",
+      "x": 2,
+      "y": 0
+    },
+    {
+      "color": "GREEN",
+      "x": 1,
+      "y": 2
+    },
+    {
+      "color": "YELLOW",
+      "x": 3,
+      "y": 3
+    },
+    {
+      "color": "YELLOW",
+      "x": 3,
+      "y": 0
+    }
+  ]
+}
