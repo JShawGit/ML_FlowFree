@@ -4,10 +4,10 @@ import numpy as np
 import random
 
 DEBUG = True  # to print debug dialogue
-""" Q Learning ----------------------------
+""" Sarsa Learning ----------------------------
         Will learn how to connect the dots.
 """
-class Q_Learn_Agent:
+class Sarsa_Learn_Agent:
     """ Initialize Agent ----------------------- """
     def __init__(self, game, alpha, epsilon, gamma, rewards):
         global DEBUG
@@ -343,20 +343,17 @@ class Q_Learn_Agent:
 
     """ Set Q ------------------------------------ """
     def set_q(self, current_node, next_node, reward, current_color):
-        """ https://en.wikipedia.org/wiki/Q-learning """
+        """ https://en.wikipedia.org/wiki/State%E2%80%93action%E2%80%93reward%E2%80%93state%E2%80%93action """
         cur_pos = current_node.position  # current pos
         next_pos = next_node.position  # next pos
         r = self.reward_function(reward)  # reward
-
-        # find optimal value, argmax_a(Q(s_{t+1}, a))
-        optimal_pos = self.find_optimal(cur_pos, current_node.neighbors, current_color).position
 
         if current_color == 'RED':
             # temporal difference
             temp_diff = (
                     r +  # reward
                     self.gamma *  # discount factor
-                    self.qtable_red[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                    self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
                     self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
             )
 
@@ -368,7 +365,7 @@ class Q_Learn_Agent:
             temp_diff = (
                     r +  # reward
                     self.gamma *  # discount factor
-                    self.qtable_blue[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                    self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
                     self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
             )
 
@@ -380,7 +377,7 @@ class Q_Learn_Agent:
             temp_diff = (
                     r +  # reward
                     self.gamma *  # discount factor
-                    self.qtable_green[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                    self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
                     self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
             )
 
@@ -392,7 +389,7 @@ class Q_Learn_Agent:
             temp_diff = (
                     r +  # reward
                     self.gamma *  # discount factor
-                    self.qtable_yellow[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                    self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
                     self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
             )
 
@@ -420,16 +417,13 @@ class Q_Learn_Agent:
             # reward
             r = self.reward_function(reward)
 
-            # find optimal value, argmax_a(Q(s_{t+1}, a))
-            optimal_pos = self.find_optimal(cur_pos, current_node.neighbors, current_color).position
-
             # temporal difference
             if current_color == 'RED':
                 # temporal difference
                 temp_diff = (
                         r +  # reward
                         self.gamma *  # discount factor
-                        self.qtable_red[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                        self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
                         self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
                 )
 
@@ -441,7 +435,7 @@ class Q_Learn_Agent:
                 temp_diff = (
                         r +  # reward
                         self.gamma *  # discount factor
-                        self.qtable_blue[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                        self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
                         self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
                 )
 
@@ -453,7 +447,7 @@ class Q_Learn_Agent:
                 temp_diff = (
                         r +  # reward
                         self.gamma *  # discount factor
-                        self.qtable_green[(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
+                        self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
                         self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
                 )
 
@@ -466,7 +460,7 @@ class Q_Learn_Agent:
                         r +  # reward
                         self.gamma *  # discount factor
                         self.qtable_yellow[(cur_pos[0], cur_pos[1])][
-                            (optimal_pos[0], optimal_pos[1])] -  # optimal value
+                            (next_pos[0], next_pos[1])] -  # optimal value
                         self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
                 )
 

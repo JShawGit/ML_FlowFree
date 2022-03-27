@@ -2,7 +2,7 @@ import pygame
 
 from global_vars import get_val
 import tester as t
-import qlearn as q
+import sarsalearn as q
 import game as g
 
 """ Main -------------------------------------
@@ -13,26 +13,25 @@ import game as g
 
 # game constants
 GAME_FILE = 'levels/test.json'
-ALPHA = 0.5
-EPSILON = 1.0
-GAMMA = 0.5
-LOOPS = 5000
+ALPHA     = 0.6
+EPSILON   = 1.0
+GAMMA     = 0.6
+LOOPS     = 1000
 
 # tally the learning outcomes, for science
-res = {
-    "stuck": 0,  # no more moves are left
-    "block": 0,  # if path blocks another path
-    "reached_empty": 0,  # goal is reached without filling the board
-    "reached_filled": 0  # goal is reached, board is filled
-}
+res = {}
 
 # can change this for experiments :)
 rewards = {
-    "move":             0,  # a grid space is filled
-    "stuck":           -5,  # no more moves are left
-    "block":          -20,  # if a path blocks another color
-    "reached_empty":    5,  # goal is reached without filling the board
-    "reached_filled": 1000   # goal is reached, board is filled
+    "move":              0,  # a grid space is filled
+    "stuck":            -5,  # no more moves are left
+    "block":           -10,  # if a path blocks another color
+    "reached_empty":    75,
+    "reached_filled":  100
+
+    # "reached":        1000,  # if a path blocks another color
+    # "empty": 0,  # goal is reached without filling the board
+    # "filled": 0,  # goal is reached, board is filled
 }
 
 
@@ -43,9 +42,16 @@ rewards = {
 def main(file):
     # create the game
     game = g.Game(file)
+    for color in game.colors:
+        res[color] = {
+                "block":          0,
+                "stuck":          0,
+                "reached_empty":  0,
+                "reached_filled": 0
+            }
 
     # create learning agent
-    agent = q.Q_Learn_Agent(game, ALPHA, EPSILON, GAMMA, rewards)
+    agent = q.Sarsa_Learn_Agent(game, ALPHA, EPSILON, GAMMA, rewards)
 
     # while the game is running
     while game.running:
@@ -107,7 +113,12 @@ def train_agent(agent, game):
         game.load_level()
 
         # learn
-        res[agent.learning()] += 1
+        run_res = agent.iterate(True)
+        for color in game.colors:
+            for key in run_res[color]:
+                res[color][key] += run_res[color][key]
+        # res["filled"] += run_res["filled"]
+        # res["empty"] += run_res["empty"]
 
         game.clock.tick(get_val("fps"))
         game.generate_fonts()
@@ -117,14 +128,14 @@ def train_agent(agent, game):
 
 """ Optimal Agent --------- """
 def optimal_agent(agent, game):
-    print(res)
-
     # reset board
     pygame.display.flip()
     game.load_level()
 
     # learn
-    agent.optimal_game()
+    res = agent.iterate(False)
+    for key in res:
+        print(str(key) + ": " + str(res[key]))
 
     # show results
     game.clock.tick(get_val("fps"))
