@@ -2,7 +2,7 @@ import pygame
 
 from global_vars import get_val
 import tester as t
-import sarsalearn as q
+import qlearn_MOD as q
 import game as g
 
 """ Main -------------------------------------
@@ -16,22 +16,26 @@ GAME_FILE = 'levels/test.json'
 ALPHA     = 0.6
 EPSILON   = 1.0
 GAMMA     = 0.6
-LOOPS     = 1000
+LAMBDA    = 0.6
+LOOPS     = 10000
 
 # tally the learning outcomes, for science
-res = {}
+res = {
+    "filled":   0,  # board is filled
+    "empty":    0,  # board is filled
+}
 
 # can change this for experiments :)
 rewards = {
-    "move":              0,  # a grid space is filled
-    "stuck":            -5,  # no more moves are left
-    "block":           -10,  # if a path blocks another color
-    "reached_empty":    75,
-    "reached_filled":  100
+    "move":       0,  # a grid space is filled
+    "stuck":     -1,  # no more moves are left
+    "block":    -20,  # if a path blocks another color
+    "reached": 1000,  # if a path blocks another color
+    "empty":      0,  # goal is reached without filling the board
+    "filled":     0,  # goal is reached, board is filled
 
-    # "reached":        1000,  # if a path blocks another color
-    # "empty": 0,  # goal is reached without filling the board
-    # "filled": 0,  # goal is reached, board is filled
+    "reached_empty":  -5,
+    "reach_filled":  1000
 }
 
 
@@ -44,14 +48,13 @@ def main(file):
     game = g.Game(file)
     for color in game.colors:
         res[color] = {
-                "block":          0,
-                "stuck":          0,
-                "reached_empty":  0,
-                "reached_filled": 0
+                "stuck":   0,  # no more moves are left
+                "block":   0,  # if path blocks another path
+                "reached": 0   # goal is reached
             }
 
     # create learning agent
-    agent = q.Sarsa_Learn_Agent(game, ALPHA, EPSILON, GAMMA, rewards)
+    agent = q.Q_Learn_Agent(game, ALPHA, EPSILON, GAMMA, LAMBDA, rewards)
 
     # while the game is running
     while game.running:
@@ -117,8 +120,8 @@ def train_agent(agent, game):
         for color in game.colors:
             for key in run_res[color]:
                 res[color][key] += run_res[color][key]
-        # res["filled"] += run_res["filled"]
-        # res["empty"] += run_res["empty"]
+        res["filled"] += run_res["filled"]
+        res["empty"] += run_res["empty"]
 
         game.clock.tick(get_val("fps"))
         game.generate_fonts()

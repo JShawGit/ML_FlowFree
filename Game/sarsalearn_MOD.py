@@ -6,10 +6,10 @@ import numpy as np
 import random
 
 DEBUG = True  # to print debug dialogue
-""" Q Learning ----------------------------
+""" Sarsa Learning ----------------------------
         Will learn how to connect the dots.
 """
-class Q_Learn_Agent:
+class Sarsa_Learn_Agent:
     """ Initialize Agent ------------------------------------------------------------------------------------------- """
     def __init__(self, game, alpha, epsilon, gamma, llambda, rewards):
         global DEBUG
@@ -60,7 +60,7 @@ class Q_Learn_Agent:
         self.start_pos = self.game.start_position  # start grid tile
         self.final_pos = self.game.final_position  # goal grid tile
 
-        # Q learning
+        # Sarsa learning
         self.qtables = {
             "RED":    {},
             "YELLOW": {},
@@ -510,12 +510,12 @@ class Q_Learn_Agent:
 
 
     """ Get Temp Diff ---------------------------------------------------------------------------------------------- """
-    def get_temp_diff(self, color, reward, cur_pos, next_pos, optimal_pos):
+    def get_temp_diff(self, color, reward, cur_pos, next_pos, last_pos):
         return (  # r_t + gamma * argmax_a(Q(s_{t+1}, a)) - Q(s_t, a_t)
                 reward +      # reward
                 self.gamma *  # discount factor
-                self.qtables[color][(cur_pos[0], cur_pos[1])][(optimal_pos[0],  optimal_pos[1])] -  # optimal value
-                self.qtables[color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
+                self.qtables[color][(cur_pos[0], cur_pos[1])][(next_pos[0],  next_pos[1])] -  # optimal value
+                self.qtables[color][(last_pos[0], last_pos[1])][(cur_pos[0], cur_pos[1])]  # old value
         )
     """ --- End Get Temp Diff --- """
 
@@ -523,26 +523,22 @@ class Q_Learn_Agent:
 
     """ Set Q ------------------------------------------------------------------------------------------------------ """
     def set_q(self, current_node, next_node, reward, current_color):
-        """ https://en.wikipedia.org/wiki/Q-learning """
+        """" https://en.wikipedia.org/wiki/State%E2%80%93action%E2%80%93reward%E2%80%93state%E2%80%93action """
 
         # error check
         if current_color not in self.qtables:
             print('Error: color ' + current_color + " not valid!")
             return
 
-        cur_pos = current_node.position  # current pos
-        next_pos = next_node.position  # next pos
+        cur_pos = current_node.position   # current pos
+        next_pos = next_node.position     # next pos
+        last_pos = self.node_paths[current_color][-2].position
 
         # update eligibility
         self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += 1
 
-        # find optimal value, argmax_a(Q(s_{t+1}, a))
-        optimal_pos = self.find_optimal(cur_pos, current_node.neighbors, current_color).position
-
         # handle if next node(s) don't exist
         if (next_pos[0], next_pos[1]) not in self.qtables[current_color][(cur_pos[0], cur_pos[1])]:
-            return
-        elif (optimal_pos[0], optimal_pos[1]) not in self.qtables[current_color][(cur_pos[0], cur_pos[1])]:
             return
 
         # temporal difference
@@ -551,7 +547,7 @@ class Q_Learn_Agent:
             self.reward_function(reward),
             cur_pos,
             next_pos,
-            optimal_pos
+            last_pos
         )
 
         # set the new q value
@@ -561,12 +557,9 @@ class Q_Learn_Agent:
         )
 
         # set eligibility
-        if cur_pos == optimal_pos:
-            self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] = (
-                self.gamma * self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]
-            )
-        else:
-            self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] = 0
+        self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] = (
+            self.gamma * self.llambda * self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]
+        )
 
     """ --- End Set Q ---- """
 
