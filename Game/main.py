@@ -33,8 +33,8 @@ rewards = {
     "stuck":     -1,  # no more moves are left
     "block":    -20,  # if a path blocks another color
     "reached":   30,  # if a path blocks another color
-    "empty":      0,  # goal is reached without filling the board
-    "filled":     0,  # goal is reached, board is filled
+    "empty":      40,  # goal is reached without filling the board
+    "filled":     100,  # goal is reached, board is filled
 
     "reached_empty":  -5,
     "reach_filled":  1000
@@ -151,7 +151,7 @@ def optimal_agent(agent, game):
 
 """ Run this if this file is ran """
 if __name__ == "__main__":
-    #main(GAME_FILE)
+   # main(GAME_FILE)
 
     # Test files to use ----------- #
     FILES_1 = [  # 1 dot pair

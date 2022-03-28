@@ -5,7 +5,7 @@ import matplotlib
 import threading
 import traceback
 
-import sarsalearn_MOD as s
+import sarsalearn as s
 import qlearn_MOD as q
 import game as g
 
@@ -92,11 +92,11 @@ def test_one_game(file, types, iter_array, rewards, items):
         games[type] = tmp[0]
         res[type]   = tmp[1]
         iter_res[type] = {
-            "filled":  [],
-            "empty":   [],
-            "stuck":   [],
-            "block":   [],
-            "reached": []
+            "filled":  [0],
+            "empty":   [0],
+            "stuck":   [0],
+            "block":   [0],
+            "reached": [0]
         }
         if type == "Q":
             agents[type] = q.Q_Learn_Agent(games[type], items[0], items[1], items[2], items[3], rewards)
@@ -112,9 +112,9 @@ def test_one_game(file, types, iter_array, rewards, items):
             run_res[type].append(r.copy())
             for color in games[type].colors:
                 for key in l[color]:
-                    iter_res[type][key] += run_res[color][key]
-        res["filled"] += run_res["filled"]
-        res["empty"] += run_res["empty"]
+                    iter_res[type][key][0] += iter_res[type][key][0]
+            res[type]["filled"] += run_res[type][0]["filled"]
+            res[type]["empty"] += run_res[type][0]["empty"]
 
     # return overall and optimal res
     return [res, run_res, iter_res]
