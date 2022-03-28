@@ -9,13 +9,6 @@ import sarsalearn_MOD as s
 import qlearn_MOD as q
 import game as g
 
-# Test files to use ----------- #
-FILES_1 = [  # 1 dot pair
-    'levels/1/1_2x2.json',
-    'levels/1/1_3x3.json',
-    'levels/1/1_4x4.json'
-]
-
 """ Init Game ----------------------------------------------------------------------------------------------------------
     Inits a game and results, returns them
     Takes in:
@@ -46,18 +39,19 @@ def init_game(file):
         Res
 """
 def learn(iterate, game, agent, res):
-    for i in range(iterate):
-        try:
+    try:
+        for i in range(iterate):
             run_res = agent.iterate(True)
-        except:
-            traceback.print_exc()
-            print("Error learning.")
-            exit(-1)
-        for color in game.colors:
-            for key in run_res[color]:
-                res[color][key] += run_res[color][key]
-        res["filled"] += run_res["filled"]
-        res["empty"]  += run_res["empty"]
+            for color in game.colors:
+                for key in run_res[color]:
+                    res[color][key] += run_res[color][key]
+            res["filled"] += run_res["filled"]
+            res["empty"]  += run_res["empty"]
+        return res
+    except:
+        traceback.print_exc()
+        print("Error learning.")
+        exit(-1)
 """ --- End Learn --- """
 
 
@@ -73,53 +67,146 @@ def run(agent):
 
 
 
-""" Test One Pair ------------------------------------------------------------------------------------------------------
-    Test all test files in FILES_1, with one pair of dots.
+""" Test One Game ------------------------------------------------------------------------------------------------------
+    Test all test files in an array of file-paths.
     
     Takes in:
-        Type: 0-Q, 1-S, 3-QS
-        Iteration array: ex. [100, 500, 1000]
+        File: file name for the game
+        Types: an array, ex["S", "Q"]
+        Iteration array: ex. [100, 100, 100] for 100 learning-passes 3 times
+        Rewards: ex. stuck or filled
+        Items: Alpha, Epsilon, Gamma, Lambda
+"""
+def test_one_game(file, types, iter_array, rewards, items):
+    # play game for each file in the one-pair files
+    res      = {}
+    iter_res = {}
+    run_res  = {}
+    games    = {}
+    agents   = {}
+
+    # create agents and their games
+    for type in types:
+        run_res[type] = []
+        tmp = init_game(file)
+        games[type] = tmp[0]
+        res[type]   = tmp[1]
+        iter_res[type] = {
+            "filled":  [],
+            "empty":   [],
+            "stuck":   [],
+            "block":   [],
+            "reached": []
+        }
+        if type == "Q":
+            agents[type] = q.Q_Learn_Agent(games[type], items[0], items[1], items[2], items[3], rewards)
+        else:
+            agents[type] = s.Sarsa_Learn_Agent(games[type], items[0], items[1], items[2], items[3], rewards)
+
+    # iterate through the learning-iterations
+    # log the results for the optimal path after each iter
+    for iterate in iter_array:
+        for type in agents:
+            l = learn(iterate, games[type], agents[type], res[type])
+            r = run(agents[type])
+            run_res[type].append(r.copy())
+            for color in games[type].colors:
+                for key in l[color]:
+                    iter_res[type][key] += run_res[color][key]
+        res["filled"] += run_res["filled"]
+        res["empty"] += run_res["empty"]
+
+    # return overall and optimal res
+    return [res, run_res, iter_res]
+""" --- End Test One Game --- """
+
+
+
+""" Multiple Games -----------------------------------------------------------------------------------------------------
+    Tests multiple games 
+    
+    Takes in:
+        Num games: ex. 100
+        Files: game files
+        Type: ["Q", "S"]
+        Iteration array: ex. [100, 100, 100]
         Rewards: ex. stuck or filled
         Items: Alpha, Epsilon, Gamma, Lambda
         Filename prefix: ex. "/results/test1_game1_"
 """
-def test_one_pair(type, iter_array, rewards, items, prefix):
-    global FILES_1
-    # play game for each file in the one-pair files
-    for file in FILES_1:
-        res     = {}
-        run_res = {}
-        games   = {}
-        agents  = {}
+def multiple_games(num_games, files, types, iter_array, rewards, items, prefix):
+    res      = {}
+    run_res  = {}
+    iter_res = {}
 
-        # create agents and their games
-        if type == 0 or type == 3:
-            run_res["Q"] = []
-            tmp = init_game(file)
-            games["Q"] = tmp[0]
-            res["Q"]   = tmp[1]
-            agents["Q"] = q.Q_Learn_Agent(games["Q"], items[0], items[1], items[2], items[3], rewards)
-        if type == 1 or type == 3:
-            run_res["S"] = []
-            tmp = init_game(file)
-            games["S"] = tmp[0]
-            res["S"]   = tmp[1]
-            agents["S"] = s.Sarsa_Learn_Agent(games["S"], items[0], items[1], items[2], items[3], rewards)
+    # prepare results
+    for file in files:
+        run_res[file]  = {}
+        res[file]      = {}
+        iter_res[file] = {}
+        for type in types:
+            run_res[file][type]  = []
+            res[file][type]      = []
+            iter_res[file][type] = []
+            for game in range(num_games):
+                tmp = test_one_game(file, type, iter_array, rewards, items)
+                for key in tmp[0]:
+                    res[file][key].append(tmp[0][key])
+                    run_res[file][key].append(tmp[1][key])
+                    iter_res[file][key].append(tmp[2][key])
 
-        # iterate through the learning-iterations
-        # log the results for the optimal path after each iter
-        for iterate in iter_array:
-            for agent in agents:
-                learn(iterate, games[agent], agents[agent], res[agent])
-                run_res[agent].append(run(agents[agent]))
+        plot_learning_curve(num_games, types, iter_array, res[file], run_res[file], iter_res[file], prefix, files, items)
+""" --- End Multiple Games --- """
 
-        # print to file
-        for r in res:
-            df_res = pd.DataFrame.from_dict([res[r]])
-            df_res.to_csv(prefix + r + '_total_results.txt', header=False, index=True, mode='a')
+
+
+""" Plot Learning Curve ------------------------------------------------------------------------------------------------
+    Plots learning curves for the given data.
+    The learning curve will be the number of successes/stucks/etc after each iteration
+"""
+def plot_learning_curve(num_games, types, iter_array, res, run_res, iter_res, prefix, files, items):
+    for type in types:
+        for file in range(len(files)):
+            x_vals = iter_array.copy()
+            xy_vals = {
+                "filled":  [],
+                "empty":   [],
+                "stuck":   [],
+                "block":   [],
+                "reached": []
+            }
+
+            # append values
             for i in range(len(iter_array)):
-                df_run_res = pd.DataFrame.from_dict([run_res[r][i]])
-                df_run_res.to_csv(prefix + r + '_' + str(i) + '_total_results.txt', header=False, index=True, mode='a')
+                for key in iter_res[type][file][i]:
+                    if key in xy_vals:
+                        xy_vals[key].append(iter_res[type][file][i][key][i])
+                    else:
+                        for subkey in iter_res[type][file][i][key]:
+                            xy_vals[subkey].append(iter_res[type][file][i][key][subkey][i])
+
+            # graph
+
+
+
+
+""" --- End Plot Learning Curve --- """
+
+
+
+
+
+
+
+"""
+# print to file
+for r in res:
+    df_res = pd.DataFrame.from_dict([res[r]])
+    df_res.to_csv(prefix + r + '_total_results.txt', header=False, index=True, mode='a')
+    for i in range(len(iter_array)):
+        df_run_res = pd.DataFrame.from_dict([run_res[r][i]])
+        df_run_res.to_csv(prefix + r + '_' + str(i) + '_total_results.txt', header=False, index=True, mode='a')
+"""
 
 
 

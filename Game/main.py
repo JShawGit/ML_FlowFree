@@ -152,8 +152,16 @@ def optimal_agent(agent, game):
 """ Run this if this file is ran """
 if __name__ == "__main__":
     #main(GAME_FILE)
+
+    # Test files to use ----------- #
+    FILES_1 = [  # 1 dot pair
+        'levels/1/1_2x2.json',
+        'levels/1/1_3x3.json'
+    ]
+
     try:
-        t.test_one_pair(3, [10, 100, 1000], rewards, items, "./test_results/test1_")
+        #        num_games,   files,      types,      iter_array, rewards, items,  prefix
+        t.multiple_games(1, FILES_1, ["Q", "S"], [10, 10], rewards, items, "./test_results/test1_")
     except Exception as err:
         traceback.print_exc()
         print("Error testing for one pair.")
