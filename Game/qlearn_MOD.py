@@ -9,52 +9,55 @@ DEBUG = True  # to print debug dialogue
 """ Q Learning ----------------------------
         Will learn how to connect the dots.
 """
+
+
 class Q_Learn_Agent:
     """ Initialize Agent ------------------------------------------------------------------------------------------- """
+
     def __init__(self, game, alpha, epsilon, gamma, llambda, rewards):
         global DEBUG
-        self.game    = game
-        self.alpha   = alpha
+        self.game = game
+        self.alpha = alpha
         self.epsilon = epsilon
-        self.gamma   = gamma
-        self.llambda  = llambda
+        self.gamma = gamma
+        self.llambda = llambda
         self.rewards = rewards
 
         self.grid_x = self.game.grid_size[0]  # grid x len
         self.grid_y = self.game.grid_size[1]  # grid y len
 
         # filled squares
-        self.orig_filled    = np.zeros((self.grid_x, self.grid_y), dtype=bool)
-        self.all_filled     = np.zeros((self.grid_x, self.grid_y), dtype=bool)
+        self.orig_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
+        self.all_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
         self.current_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
 
         # how many squares already filled
-        self.orig_size    = 0
+        self.orig_size = 0
         self.current_size = 0
 
         # square colors
         self.orig_colors = np.zeros((self.grid_x, self.grid_y), dtype=int)
         self.current_colors = np.zeros((self.grid_x, self.grid_y), dtype=int)
         self.colors = {
-            "EMPTY":  0,
-            "RED":    1,
+            "EMPTY": 0,
+            "RED": 1,
             "YELLOW": 2,
-            "GREEN":  3,
-            "BLUE":   4
+            "GREEN": 3,
+            "BLUE": 4
         }
 
         # path of nodes for current iteration
         self.node_paths = {
-            "RED":    [],
+            "RED": [],
             "YELLOW": [],
-            "GREEN":  [],
-            "BLUE":   []
+            "GREEN": [],
+            "BLUE": []
         }
         self.ends = {
-            "RED":    {"start": None, "end": None},
+            "RED": {"start": None, "end": None},
             "YELLOW": {"start": None, "end": None},
-            "GREEN":  {"start": None, "end": None},
-            "BLUE":   {"start": None, "end": None}
+            "GREEN": {"start": None, "end": None},
+            "BLUE": {"start": None, "end": None}
         }
 
         self.start_pos = self.game.start_position  # start grid tile
@@ -62,23 +65,23 @@ class Q_Learn_Agent:
 
         # Q learning
         self.qtables = {
-            "RED":    {},
+            "RED": {},
             "YELLOW": {},
-            "GREEN":  {},
-            "BLUE":   {}
+            "GREEN": {},
+            "BLUE": {}
         }
         self.etables = {
-            "RED":    {},
+            "RED": {},
             "YELLOW": {},
-            "GREEN":  {},
-            "BLUE":   {}
+            "GREEN": {},
+            "BLUE": {}
         }
 
         # list of nodes to not fill
         self.start_nodes = []
         self.final_nodes = []
 
-        self.grid_nodes = []   # store all grid-nodes here
+        self.grid_nodes = []  # store all grid-nodes here
         self.generate_nodes()  # get nodes
         self.generate_neighbors(False)  # get node-neighbors
 
@@ -89,14 +92,14 @@ class Q_Learn_Agent:
         # get the final node
         self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
+
     """ --- End Init --- """
 
-
-
     """ Reset Nodes ------------------------------------------------------------------------------------------------ """
+
     def reset_nodes(self):
-        self.grid_nodes = []           # store all grid-nodes here
-        self.generate_nodes()          # get nodes
+        self.grid_nodes = []  # store all grid-nodes here
+        self.generate_nodes()  # get nodes
         self.generate_neighbors(True)  # get node-neighbors
 
         # get the start node
@@ -106,11 +109,11 @@ class Q_Learn_Agent:
         # get the final node
         self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
+
     """ --- End Init --- """
 
-
-
     """ Generate Nodes --------------------------------------------------------------------------------------------- """
+
     def generate_nodes(self):
         # Clearing the Visited Cells
         self.game.visited_cells = []
@@ -150,11 +153,11 @@ class Q_Learn_Agent:
         # Resetting local object start/final position to be with starting color
         self.start_pos = self.game.start_position
         self.final_pos = self.game.final_position
+
     """ --- End Gen Nodes --- """
 
-
-
     """ Generate Neighbors ----------------------------------------------------------------------------------------- """
+
     def generate_neighbors(self, re_init):
 
         # for every node, get neighbors
@@ -196,12 +199,11 @@ class Q_Learn_Agent:
                         for color in self.game.colors:
                             self.qtables[color][(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
                             self.etables[color][(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
+
     """ --- End Gen Neighbors --- """
 
-
-
-
     """ Skip Neighbor ---------------------------------------------------------------------------------------------- """
+
     def skip_neighbor(self, next_state):
         # skip if out of bounds
         if next_state[0] > self.grid_x - 1 \
@@ -213,11 +215,11 @@ class Q_Learn_Agent:
         # don't skip
         else:
             return False
+
     """ --- End Skip Neighbor --- """
 
-
-
     """ Iterate ---------------------------------------------------------------------------------------------------- """
+
     def iterate(self, learning):
         # Check to see if its the First Run
         if self.game.tries > 1:
@@ -237,7 +239,7 @@ class Q_Learn_Agent:
 
         # node positions to start/end from
         starting_nodes = {}
-        final_nodes    = {}
+        final_nodes = {}
         for color in self.game.colors:
             start_pos = np.argwhere(self.game.grid_array == color).tolist()[0]
             final_pos = np.argwhere(self.game.grid_array == color).tolist()[1]
@@ -262,9 +264,9 @@ class Q_Learn_Agent:
 
             # prime return array
             return_vals[color] = {
-                "stuck":   0,  # no more moves are left
-                "block":   0,  # if path blocks another path
-                "reached": 0   # goal is reached
+                "stuck": 0,  # no more moves are left
+                "block": 0,  # if path blocks another path
+                "reached": 0  # goal is reached
             }
 
             # while not solved path
@@ -322,12 +324,11 @@ class Q_Learn_Agent:
                     is_blocking = True
                     status[color] = "block"
 
-
                 # check if the next node is the final node
                 if next_node == final_nodes[color]:
                     self.current_filled[next_node.position[0]][next_node.position[1]] = True
                     if is_blocking:
-                        res = ["block", "block"]
+                        res = ["block", "reached"]
                     else:
                         res = ["move", "reached"]
                         status[color] = "reached"
@@ -351,11 +352,11 @@ class Q_Learn_Agent:
 
         if self.is_filled():
             return_vals["filled"] = 1
-            return_vals["empty"]  = 0
+            return_vals["empty"] = 0
             flag = "filled"
         else:
             return_vals["filled"] = 0
-            return_vals["empty"]  = 1
+            return_vals["empty"] = 1
             flag = "empty"
 
         for color in self.game.colors:
@@ -365,11 +366,11 @@ class Q_Learn_Agent:
                 self.set_q_path(flag, color)
 
         return return_vals
+
     """ --- End Iterate --- """
 
-
-
     """ Has Moves -------------------------------------------------------------------------------------------------- """
+
     def has_moves(self, node, color):
         no_move = 0
         n_neighbors = len(node.neighbors)
@@ -388,74 +389,143 @@ class Q_Learn_Agent:
             return False
         else:
             return True
+
     """ --- End Has Moves --- """
 
-
-
     """ Is Blocked ------------------------------------------------------------------------------------------------- """
+
     def is_blocked(self, new_node, check_color, final_nodes):
         path = self.node_paths[check_color]
         path_last = path[-1]
-
+        grid = self.current_filled.copy()
         # this path is completed, no blockage
         if path_last.is_final:
             return False
 
+        grid_up = [[0] * len(grid) for _ in range(len(grid))]
+
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j]:
+                    grid_up[i][j] = 0
+                else:
+                    grid_up[i][j] = 3
+
+        grid_up[path_last.position[0]][path_last.position[1]] = 1
+        grid_up[final_nodes[check_color].position[0]][path_last.position[1]] = 2
+
         # Find number of unique paths in a matrix with obstacles.
         # code referenced from: geeksforgeeks.org/check-if-a-path-exists-from-start-to-end-cell-in-given-matrix-with-obstacles-in-at-most-k-moves/
-        def canReach(start_pos, end_pos):
-            grid = self.current_filled.copy()
-            K = self.grid_x * self.grid_y
+        def canReach(grid, end_node):
             N = len(grid)
-            M = len(grid[0])
-            dp = [[2147483647 for _ in range(M)] for _ in range(N)]
-            dp[start_pos[0]][start_pos[1]] = 0
-            for i in range(1, M):
-                if (grid[0][i] == '.'):
-                    dp[0][i] = 1 + dp[0][i - 1]
-                else:
-                    break
-            for i in range(1, N):
-                if (grid[i][0] == '.'):
-                    dp[i][0] = 1 + dp[i - 1][0]
-                else:
-                    break
-            for i in range(1, N):
-                for j in range(1, M):
-                    if (grid[i][j] == False):
-                        dp[i][j] = min(dp[i][j], 1 + min(dp[i - 1][j], dp[i][j - 1]))
-            if dp[end_pos[0]][end_pos[1]] <= K:
-                return True
-            else:
+
+            # Method for finding and printing
+            # whether the path exists or not
+            def isPath(matrix, n):
+
+                # Defining visited array to keep
+                # track of already visited indexes
+                visited = [[False for x in range(n)]
+                           for y in range(n)]
+
+                # Flag to indicate whether the
+                # path exists or not
+                flag = False
+
+                for i in range(n):
+                    for j in range(n):
+
+                        # If matrix[i][j] is source
+                        # and it is not visited
+                        if (matrix[i][j] == 1 and not
+                        visited[i][j]):
+
+                            # Starting from i, j and
+                            # then finding the path
+                            if (checkPath(matrix, i,
+                                          j, visited)):
+                                # If path exists
+                                flag = True
+                                break
+                return flag
+
+            # Method for checking boundaries
+            def isSafe(i, j, matrix):
+
+                if (i >= 0 and i < len(matrix) and
+                        j >= 0 and j < len(matrix[0])):
+                    return True
                 return False
 
-        # does the last item have a path to the final node?
-        if canReach(path_last.position, final_nodes[check_color].position):
-            return False
+            # Returns true if there is a
+            # path from a source(a
+            # cell with value 1) to a
+            # destination(a cell with
+            # value 2)
+            def checkPath(matrix, i, j,
+                          visited):
 
-        # if not, is our path blocking it?
-        last_neighbors = path_last.neighbors.copy()
-        for n in last_neighbors:
-            if n.is_start or n.is_final:
-                continue
-            if n.position == new_node.position:
-                return True
+                # Checking the boundaries, walls and
+                # whether the cell is unvisited
+                if (isSafe(i, j, matrix) and
+                        matrix[i][j] != 0 and not
+                        visited[i][j]):
 
-        # if not, is our path blocking the final node?
-        last_neighbors = final_nodes[check_color].neighbors.copy()
-        for n in last_neighbors:
-            if n.is_start or n.is_final:
-                continue
-            if n.position == new_node.position:
-                return True
+                    # Make the cell visited
+                    visited[i][j] = True
 
-        # if not, ignore
-        return False
+                    # If the cell is the required
+                    # destination then return true
+                    if (matrix[i][j] == 2):
+                        return True
+
+                    # traverse up
+                    up = checkPath(matrix, i - 1,
+                                   j, visited)
+
+                    # If path is found in up
+                    # direction return true
+                    if (up):
+                        return True
+
+                    # Traverse left
+                    left = checkPath(matrix, i,
+                                     j - 1, visited)
+
+                    # If path is found in left
+                    # direction return true
+                    if (left):
+                        return True
+
+                    # Traverse down
+                    down = checkPath(matrix, i + 1,
+                                     j, visited)
+
+                    # If path is found in down
+                    # direction return true
+                    if (down):
+                        return True
+
+                    # Traverse right
+                    right = checkPath(matrix, i,
+                                      j + 1, visited)
+
+                    # If path is found in right
+                    # direction return true
+                    if (right):
+                        return True
+
+                # No path has been found
+                return False
+
+            return isPath(grid, N)
+
+        return canReach(grid_up, final_nodes[check_color])
+
     """ --- End Is Blocked --- """
 
-
-
     """ Is Blocking ------------------------------------------------------------------------------------------------ """
+
     def is_blocking(self, in_color, starting_nodes, final_nodes, status):
         # get path of checked node, return if only starter node
         in_path = self.node_paths[in_color]
@@ -479,11 +549,11 @@ class Q_Learn_Agent:
             if self.is_blocked(in_last, color, final_nodes):
                 return True
         return False
+
     """ --- End Is Blocking --- """
 
-
-
     """ Is Filled -------------------------------------------------------------------------------------------------- """
+
     def is_filled(self):
         size = self.grid_x * self.grid_y
         true = 0
@@ -492,36 +562,42 @@ class Q_Learn_Agent:
                 if self.current_filled[x][y]:
                     true += 1
         return size == true
+
     """ --- End Is Filled --- """
 
-
-
     """ Reward Function -------------------------------------------------------------------------------------------- """
+
     def reward_function(self, reward):
         size = self.grid_x * self.grid_y
+        # Finding How many Filled nodes
         fill = self.current_size
+        for x in range(self.grid_x):
+            for y in range(self.grid_y):
+                if self.current_filled[x][y]:
+                    fill += 1
+
         ratio = float(fill / size)
 
         reward_val = self.rewards[reward]
 
         return reward_val * ratio
+
     """ --- End Is Filled --- """
 
-
-
     """ Get Temp Diff ---------------------------------------------------------------------------------------------- """
+
     def get_temp_diff(self, color, reward, cur_pos, next_pos, optimal_pos):
         return (  # r_t + gamma * argmax_a(Q(s_{t+1}, a)) - Q(s_t, a_t)
-                reward +      # reward
+                reward +  # reward
                 self.gamma *  # discount factor
-                self.qtables[color][(cur_pos[0], cur_pos[1])][(optimal_pos[0],  optimal_pos[1])] -  # optimal value
+                self.qtables[color][(cur_pos[0], cur_pos[1])][(optimal_pos[0], optimal_pos[1])] -  # optimal value
                 self.qtables[color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
         )
+
     """ --- End Get Temp Diff --- """
 
-
-
     """ Set Q ------------------------------------------------------------------------------------------------------ """
+
     def set_q(self, current_node, next_node, reward, current_color):
         """ https://en.wikipedia.org/wiki/Q-learning """
 
@@ -563,16 +639,15 @@ class Q_Learn_Agent:
         # set eligibility
         if cur_pos == optimal_pos:
             self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] = (
-                self.gamma * self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]
+                    self.gamma * self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]
             )
         else:
             self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] = 0
 
     """ --- End Set Q ---- """
 
-
-
     """ Set Q Path ------------------------------------------------------------------------------------------------- """
+
     def set_q_path(self, reward, current_color):
 
         # set new q-values for completed path
@@ -586,9 +661,8 @@ class Q_Learn_Agent:
 
     """ --- End Set Q Path --- """
 
-
-
     """ Find Optimal ----------------------------------------------------------------------------------------------- """
+
     def find_optimal(self, cur_pos, neighbors, current_color):
 
         # error check
@@ -608,6 +682,10 @@ class Q_Learn_Agent:
             if q > optimal:
                 optimal = q
                 optimal_node = neighbor
+            elif q == optimal:
+                Rand_choices = [optimal_node, neighbor]
+                optimal_node = random.choice(Rand_choices)
 
         return optimal_node
+
     """ --- End Find Optimal --- """

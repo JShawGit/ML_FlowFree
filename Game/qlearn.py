@@ -498,10 +498,16 @@ class Q_Learn_Agent:
             else:
                 print('============ Error in find Optimal =========')
 
+
+
             # find max
             if q > optimal:
                 optimal = q
                 optimal_node = neighbor
+            elif q == optimal:
+                Rand_choices = [optimal_node, neighbor]
+                optimal_node = random.choice(Rand_choices)
+
 
         return optimal_node
     """ --- End Find Optimal ---------------- """

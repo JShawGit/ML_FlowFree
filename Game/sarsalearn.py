@@ -1,20 +1,26 @@
+import numpy
+
 from node import Node
 
 import numpy as np
 import random
 
 DEBUG = True  # to print debug dialogue
-""" Sarsa Learning ----------------------------
+""" Q Learning ----------------------------
         Will learn how to connect the dots.
 """
+
+
 class Sarsa_Learn_Agent:
-    """ Initialize Agent ----------------------- """
-    def __init__(self, game, alpha, epsilon, gamma, rewards):
+    """ Initialize Agent ------------------------------------------------------------------------------------------- """
+
+    def __init__(self, game, alpha, epsilon, gamma, llambda, rewards):
         global DEBUG
         self.game = game
         self.alpha = alpha
         self.epsilon = epsilon
         self.gamma = gamma
+        self.llambda = llambda
         self.rewards = rewards
 
         self.grid_x = self.game.grid_size[0]  # grid x len
@@ -22,19 +28,58 @@ class Sarsa_Learn_Agent:
 
         # filled squares
         self.orig_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
+        self.all_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
         self.current_filled = np.zeros((self.grid_x, self.grid_y), dtype=bool)
 
+        # how many squares already filled
+        self.orig_size = 0
+        self.current_size = 0
+
+        # square colors
+        self.orig_colors = np.zeros((self.grid_x, self.grid_y), dtype=int)
+        self.current_colors = np.zeros((self.grid_x, self.grid_y), dtype=int)
+        self.colors = {
+            "EMPTY": 0,
+            "RED": 1,
+            "YELLOW": 2,
+            "GREEN": 3,
+            "BLUE": 4
+        }
+
         # path of nodes for current iteration
-        self.node_path = []
+        self.node_paths = {
+            "RED": [],
+            "YELLOW": [],
+            "GREEN": [],
+            "BLUE": []
+        }
+        self.ends = {
+            "RED": {"start": None, "end": None},
+            "YELLOW": {"start": None, "end": None},
+            "GREEN": {"start": None, "end": None},
+            "BLUE": {"start": None, "end": None}
+        }
 
         self.start_pos = self.game.start_position  # start grid tile
         self.final_pos = self.game.final_position  # goal grid tile
 
         # Q learning
-        self.qtable_red = {}  # a state-action dictionary
-        self.qtable_blue = {}  # a state-action dictionary
-        self.qtable_green = {}  # a state-action dictionary
-        self.qtable_yellow = {}  # a state-action dictionary
+        self.qtables = {
+            "RED": {},
+            "YELLOW": {},
+            "GREEN": {},
+            "BLUE": {}
+        }
+        self.etables = {
+            "RED": {},
+            "YELLOW": {},
+            "GREEN": {},
+            "BLUE": {}
+        }
+
+        # list of nodes to not fill
+        self.start_nodes = []
+        self.final_nodes = []
 
         self.grid_nodes = []  # store all grid-nodes here
         self.generate_nodes()  # get nodes
@@ -47,11 +92,11 @@ class Sarsa_Learn_Agent:
         # get the final node
         self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
-    """ --- End Init ------------------------------ """
 
+    """ --- End Init --- """
 
+    """ Reset Nodes ------------------------------------------------------------------------------------------------ """
 
-    """ Reset Nodes -- """
     def reset_nodes(self):
         self.grid_nodes = []  # store all grid-nodes here
         self.generate_nodes()  # get nodes
@@ -64,22 +109,22 @@ class Sarsa_Learn_Agent:
         # get the final node
         self.final_node = [x for x in self.grid_nodes if x.is_final]
         self.final_node = self.final_node[0]
-    """ --- End Init ------------------------------ """
 
+    """ --- End Init --- """
 
+    """ Generate Nodes --------------------------------------------------------------------------------------------- """
 
-    """ Generate Nodes -- """
     def generate_nodes(self):
-
         # Clearing the Visited Cells
         self.game.visited_cells = []
+        self.orig_size = 0
 
         # Looping through all the colors
         for color in self.game.colors:
             # Setting local object start/final positions
             self.start_pos = np.argwhere(self.game.grid_array == color).tolist()[0]
             self.final_pos = np.argwhere(self.game.grid_array == color).tolist()[1]
-            self.game.visited_cells.append(self.start_pos)
+            self.orig_size += 1
 
             # for every square in the grid
             for x in range(self.grid_x):
@@ -88,14 +133,18 @@ class Sarsa_Learn_Agent:
                     # if start node
                     if [x, y] == self.start_pos:
                         self.grid_nodes.append(Node([x, y], True, False))
+                        self.orig_colors[x][y] = self.colors[color]
                         self.orig_filled[x][y] = True
-                        self.current_filled[x][y] = True
+                        self.ends[color]["start"] = (x, y)
+                        self.start_nodes.append(self.grid_nodes[-1])
 
                     # if goal node
                     elif [x, y] == self.final_pos:
                         self.grid_nodes.append(Node([x, y], False, True))
+                        self.orig_colors[x][y] = self.colors[color]
                         self.orig_filled[x][y] = True
-                        self.current_filled[x][y] = True
+                        self.ends[color]["end"] = (x, y)
+                        self.final_nodes.append(self.grid_nodes[-1])
 
                     # if empty node
                     else:
@@ -104,11 +153,11 @@ class Sarsa_Learn_Agent:
         # Resetting local object start/final position to be with starting color
         self.start_pos = self.game.start_position
         self.final_pos = self.game.final_position
-    """ --- End Gen Nodes --------------- """
 
+    """ --- End Gen Nodes --- """
 
+    """ Generate Neighbors ----------------------------------------------------------------------------------------- """
 
-    """ Generate Neighbors -- """
     def generate_neighbors(self, re_init):
 
         # for every node, get neighbors
@@ -125,14 +174,12 @@ class Sarsa_Learn_Agent:
 
             # append node to q-val table
             if not re_init:
-                self.qtable_red[(x, y)] = {}
-                self.qtable_blue[(x, y)] = {}
-                self.qtable_green[(x, y)] = {}
-                self.qtable_yellow[(x, y)] = {}
+                for color in self.game.colors:
+                    self.qtables[color][(x, y)] = {}
+                    self.etables[color][(x, y)] = {}
 
             # go over every neighbor
             for node in neighbor_nodes:
-
                 # skip if out of range
                 if self.skip_neighbor(node[0:2]):
                     continue
@@ -149,15 +196,14 @@ class Sarsa_Learn_Agent:
 
                     # append state-action to Q-table
                     if not re_init:
-                        self.qtable_red[(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
-                        self.qtable_blue[(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
-                        self.qtable_green[(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
-                        self.qtable_yellow[(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
-    """ --- End Gen Neighbors ------------------- """
+                        for color in self.game.colors:
+                            self.qtables[color][(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
+                            self.etables[color][(x, y)][(neighbor.position[0], neighbor.position[1])] = 0
 
+    """ --- End Gen Neighbors --- """
 
+    """ Skip Neighbor ---------------------------------------------------------------------------------------------- """
 
-    """ Skip Neighbor -------------- """
     def skip_neighbor(self, next_state):
         # skip if out of bounds
         if next_state[0] > self.grid_x - 1 \
@@ -169,337 +215,475 @@ class Sarsa_Learn_Agent:
         # don't skip
         else:
             return False
-    """ --- End Skip Neighbor ------------------------- """
 
+    """ --- End Skip Neighbor --- """
 
+    """ Iterate ---------------------------------------------------------------------------------------------------- """
 
-    """ Iterate ------------------- """
     def iterate(self, learning):
-
         # Check to see if its the First Run
         if self.game.tries > 1:
             self.reset_nodes()
 
-        # Get current node
-        current_node = self.start_node  # starting node
-
-        # Increase Greedyness as we learn
+        # Increase greediness as we learn
         if learning:
             if (self.game.tries % 1000 == 0) and (self.epsilon >= 0):
-                self.epsilon = self.epsilon - 0.1
+                self.epsilon = self.epsilon - 0.01
 
         # reset filled squares
         self.current_filled = self.orig_filled.copy()
+        self.current_colors = self.orig_colors.copy()
+
+        # results to return
+        return_vals = {}
+
+        # node positions to start/end from
+        starting_nodes = {}
+        final_nodes = {}
+        for color in self.game.colors:
+            start_pos = np.argwhere(self.game.grid_array == color).tolist()[0]
+            final_pos = np.argwhere(self.game.grid_array == color).tolist()[1]
+            starting_nodes[color] = self.grid_nodes[start_pos[0] * self.grid_y + start_pos[1]]
+            final_nodes[color] = self.grid_nodes[final_pos[0] * self.grid_y + final_pos[1]]
+
+        # status of colors
+        status = {}
+
+        # prime node paths
+        for color in self.game.colors:
+            self.node_paths[color] = [starting_nodes[color]]
+            status[color] = None
 
         # Start looping through colors
-        return_vals = {}
-        for color in self.game.colors:
+        col = random.sample(self.game.colors, len(self.game.colors))
+        for color in col:
+
+            # Reset node path and current color
+            current_node = starting_nodes[color]
+            self.game.current_color = color
 
             # prime return array
             return_vals[color] = {
-                "stuck":   0,         # no more moves are left
-                "block":   0,         # if path blocks another path
-                "reached_filled": 0,  # goal is reached
-                "reached_empty": 0    # goal is reached
+                "stuck": 0,  # no more moves are left
+                "block": 0,  # if path blocks another path
+                "reached": 0  # goal is reached
             }
-
-            # Reset node path
-            self.node_path = [current_node]
-
-            # Changing Current Color and starting/ending positions
-            # self.game.solved_index = self.game.solved_index + 1
-            self.game.current_color = color
-            self.start_pos = np.argwhere(self.game.grid_array == color).tolist()[0]
-            self.final_pos = np.argwhere(self.game.grid_array == color).tolist()[1]
 
             # while not solved path
             while True:
-                # get all playable actions (open nodes)
-                neighboring_nodes = np.copy(current_node.neighbors)
+                # flag for if path is blocking
+                is_blocking = False
 
+                # Get playable neighbors
+                neighboring_nodes = np.copy(current_node.neighbors)
                 for node in neighboring_nodes:
                     x, y = node.position
-                    if (node.position != self.final_pos) and self.current_filled[x][y]:
+                    if node.position != final_nodes[color].position and self.current_filled[x][y]:
                         neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
+                    for c in self.game.colors:
+                        if c != color and (node == starting_nodes[c] or node == final_nodes[c]):
+                            neighboring_nodes = np.delete(neighboring_nodes, np.where(neighboring_nodes == node))
 
                 # if no playable actions, failure
                 if len(neighboring_nodes) == 0:
-                    self.set_q_path("stuck", color)
+                    if learning:
+                        self.set_q_path("stuck", color)
                     return_vals[color]["stuck"] += 1
+                    status[color] = "stuck"
                     break
 
-                # determine if greedy or exploratory
-                prob = random.random()
+                # if a neighbor node is the final node, always finish
+                if final_nodes[color].position in [x.position for x in neighboring_nodes]:
+                    next_node = final_nodes[color]
+                    is_blocking = self.is_blocking(color, starting_nodes, final_nodes, status)
+                    self.node_paths[color].append(next_node)
 
-                # get random node
-                if learning or prob <= self.epsilon:
-                    next_node = random.choice(neighboring_nodes)
-                    self.node_path.append(next_node)
-
-                # get optimal node
-                elif prob > self.epsilon:
+                # if not learning, get optimal node
+                elif not learning:
                     next_node = self.find_optimal(current_node.position, neighboring_nodes, color)
-                    self.node_path.append(next_node)
+                    self.node_paths[color].append(next_node)
 
-                # check if goal is reached
-                if next_node == self.final_node:
-                    self.current_filled[next_node.position[0]][next_node.position[1]] = True
-                    if self.is_filled():
-                        if learning:
-                            self.set_q(current_node, next_node, "move", color)
-                            self.set_q_path("reached_filled", color)
-                        return_vals[color]["reached_filled"] += 1
-                        break
-                    else:
-                        if learning:
-                            self.set_q_path("reached_empty", color)
-                        return_vals[color]["reached_empty"] += 1
-                        break
+                # else get random or optimal
                 else:
+                    # determine if greedy or exploratory
+                    prob = random.random()
+
+                    # get optimal node
+                    if prob > self.epsilon:
+                        next_node = self.find_optimal(current_node.position, neighboring_nodes, color)
+                        self.node_paths[color].append(next_node)
+
+                    # get random node
+                    else:
+                        next_node = random.choice(neighboring_nodes)
+                        self.node_paths[color].append(next_node)
+
+                # check if new node is blocking a path
+                if not is_blocking and self.is_blocking(color, starting_nodes, final_nodes, status):
+                    self.current_filled[next_node.position[0]][next_node.position[1]] = True
+                    is_blocking = True
+                    status[color] = "block"
+
+                # check if the next node is the final node
+                if next_node == final_nodes[color]:
+                    self.current_filled[next_node.position[0]][next_node.position[1]] = True
+                    if is_blocking:
+                        res = ["block", "reached"]
+                    else:
+                        res = ["move", "reached"]
+                        status[color] = "reached"
                     if learning:
+                        self.set_q(current_node, next_node, res[0], color)
+                        self.set_q_path(res[1], color)
+                    return_vals[color][res[1]] += 1
+                    break
+
+                # else move to the next node
+                else:
+                    # move to next node
+                    if learning and not is_blocking:
                         self.set_q(current_node, next_node, "move", color)
                     self.game.draw_dot(next_node.position[0], next_node.position[1], self.game.current_color)
                     self.current_filled[next_node.position[0]][next_node.position[1]] = True
+                    self.current_colors[next_node.position[0]][next_node.position[1]] = self.colors[color]
+
+                    # move on
                     current_node = next_node
 
-            self.start_node.is_start = False
-            self.final_node.is_final = False
+        if self.is_filled():
+            return_vals["filled"] = 1
+            return_vals["empty"] = 0
+            flag = "filled"
+        else:
+            return_vals["filled"] = 0
+            return_vals["empty"] = 1
+            flag = "empty"
 
-            # get the start node
-            self.start_node = [x for x in self.grid_nodes if x.is_start]
-
-            # Checking to See if we are out of colors
-            if self.start_node:
-                self.start_node = self.start_node[0]
-                current_node = self.start_node
-
-            # get the final node
-            self.final_node = [x for x in self.grid_nodes if x.is_final]
-
-            # Checking to See if we are out of colors
-            if self.final_node:
-                self.final_node = self.final_node[0]
-
-            # reset filled squares
-            self.current_filled = self.orig_filled.copy()
+        for color in self.game.colors:
+            if status[color] == "reached" and flag == "filled":
+                self.set_q_path(flag, color)
+            else:
+                self.set_q_path(flag, color)
 
         return return_vals
-    """ --- End Iterate ----------- """
 
+    """ --- End Iterate --- """
 
+    """ Has Moves -------------------------------------------------------------------------------------------------- """
 
-    """ Has Moves -------- """
-    def has_moves(self, node):
+    def has_moves(self, node, color):
         no_move = 0
         n_neighbors = len(node.neighbors)
+        nb = numpy.copy(node.neighbors)
 
         # see if all neighbors are filled
-        for n in node.neighbors:
+        for n in nb:
             [x, y] = n.position
             if self.current_filled[x][y]:
                 no_move += 1
+            elif (n.is_start or n.is_final) and self.game.grid_array[x][y] != color:
+                no_move += 1
 
         # if all filled: fail
-        if no_move == n_neighbors:
+        if no_move >= n_neighbors:
             return False
         else:
             return True
-    """ End Has Moves ------------------- - """
 
+    """ --- End Has Moves --- """
 
+    """ Is Blocked ------------------------------------------------------------------------------------------------- """
 
-    """ Count Filled ------------------- - """
-    def count_filled(self):
-        size = 0
+    def is_blocked(self, new_node, check_color, final_nodes):
+        path = self.node_paths[check_color]
+        path_last = path[-1]
+        grid = self.current_filled.copy()
+        # this path is completed, no blockage
+        if path_last.is_final:
+            return False
+
+        grid_up = [[0] * len(grid) for _ in range(len(grid))]
+
+        for i in range(len(grid)):
+            for j in range(len(grid[0])):
+                if grid[i][j]:
+                    grid_up[i][j] = 0
+                else:
+                    grid_up[i][j] = 3
+
+        grid_up[path_last.position[0]][path_last.position[1]] = 1
+        grid_up[final_nodes[check_color].position[0]][path_last.position[1]] = 2
+
+        # Find number of unique paths in a matrix with obstacles.
+        # code referenced from: geeksforgeeks.org/check-if-a-path-exists-from-start-to-end-cell-in-given-matrix-with-obstacles-in-at-most-k-moves/
+        def canReach(grid, end_node):
+            N = len(grid)
+
+            # Method for finding and printing
+            # whether the path exists or not
+            def isPath(matrix, n):
+
+                # Defining visited array to keep
+                # track of already visited indexes
+                visited = [[False for x in range(n)]
+                           for y in range(n)]
+
+                # Flag to indicate whether the
+                # path exists or not
+                flag = False
+
+                for i in range(n):
+                    for j in range(n):
+
+                        # If matrix[i][j] is source
+                        # and it is not visited
+                        if (matrix[i][j] == 1 and not
+                        visited[i][j]):
+
+                            # Starting from i, j and
+                            # then finding the path
+                            if (checkPath(matrix, i,
+                                          j, visited)):
+                                # If path exists
+                                flag = True
+                                break
+                return flag
+
+            # Method for checking boundaries
+            def isSafe(i, j, matrix):
+
+                if (i >= 0 and i < len(matrix) and
+                        j >= 0 and j < len(matrix[0])):
+                    return True
+                return False
+
+            # Returns true if there is a
+            # path from a source(a
+            # cell with value 1) to a
+            # destination(a cell with
+            # value 2)
+            def checkPath(matrix, i, j,
+                          visited):
+
+                # Checking the boundaries, walls and
+                # whether the cell is unvisited
+                if (isSafe(i, j, matrix) and
+                        matrix[i][j] != 0 and not
+                        visited[i][j]):
+
+                    # Make the cell visited
+                    visited[i][j] = True
+
+                    # If the cell is the required
+                    # destination then return true
+                    if (matrix[i][j] == 2):
+                        return True
+
+                    # traverse up
+                    up = checkPath(matrix, i - 1,
+                                   j, visited)
+
+                    # If path is found in up
+                    # direction return true
+                    if (up):
+                        return True
+
+                    # Traverse left
+                    left = checkPath(matrix, i,
+                                     j - 1, visited)
+
+                    # If path is found in left
+                    # direction return true
+                    if (left):
+                        return True
+
+                    # Traverse down
+                    down = checkPath(matrix, i + 1,
+                                     j, visited)
+
+                    # If path is found in down
+                    # direction return true
+                    if (down):
+                        return True
+
+                    # Traverse right
+                    right = checkPath(matrix, i,
+                                      j + 1, visited)
+
+                    # If path is found in right
+                    # direction return true
+                    if (right):
+                        return True
+
+                # No path has been found
+                return False
+
+            return isPath(grid, N)
+
+        return canReach(grid_up, final_nodes[check_color])
+
+    """ --- End Is Blocked --- """
+
+    """ Is Blocking ------------------------------------------------------------------------------------------------ """
+
+    def is_blocking(self, in_color, starting_nodes, final_nodes, status):
+        # get path of checked node, return if only starter node
+        in_path = self.node_paths[in_color]
+        in_last = in_path[-1]
+
+        # not blocking if first/last node
+        if in_last.is_final or in_last.is_start:
+            return False
+
+        # check other paths against node
+        for color in self.game.colors:
+            if in_color == color:
+                continue
+
+            # if skip
+            stat = status[color]
+            if stat is not None:
+                return False
+
+            # check if blocking this color
+            if self.is_blocked(in_last, color, final_nodes):
+                return True
+        return False
+
+    """ --- End Is Blocking --- """
+
+    """ Is Filled -------------------------------------------------------------------------------------------------- """
+
+    def is_filled(self):
+        size = self.grid_x * self.grid_y
+        true = 0
         for x in range(self.grid_x):
             for y in range(self.grid_y):
                 if self.current_filled[x][y]:
-                    size += 1
-        return size
-    """ --- End Is Filled --------------- """
+                    true += 1
+        return size == true
 
+    """ --- End Is Filled --- """
 
+    """ Reward Function -------------------------------------------------------------------------------------------- """
 
-    """ Is Filled ------------------- - """
-    def is_filled(self):
-        size = self.grid_x * self.grid_y
-        return size == self.count_filled()
-    """ --- End Is Filled --------------- """
-
-
-
-    """ Reward Function ------------------- - """
     def reward_function(self, reward):
         size = self.grid_x * self.grid_y
-        fill = self.count_filled()
+        # Finding How many Filled nodes
+        fill = self.current_size
+        for x in range(self.grid_x):
+            for y in range(self.grid_y):
+                if self.current_filled[x][y]:
+                    fill += 1
+
         ratio = float(fill / size)
 
         reward_val = self.rewards[reward]
 
         return reward_val * ratio
-    """ --- End Is Filled --------------- """
 
+    """ --- End Is Filled --- """
 
+    """ Get Temp Diff ---------------------------------------------------------------------------------------------- """
 
-    """ Set Q ------------------------------------ """
+    def get_temp_diff(self, color, reward, cur_pos, next_pos, optimal_pos):
+        return (  # r_t + gamma * argmax_a(Q(s_{t+1}, a)) - Q(s_t, a_t)
+                reward +  # reward
+                self.gamma *  # discount factor
+                self.qtables[color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
+                0.5*self.qtables[color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
+        )
+
+    """ --- End Get Temp Diff --- """
+
     def set_q(self, current_node, next_node, reward, current_color):
-        """ https://en.wikipedia.org/wiki/State%E2%80%93action%E2%80%93reward%E2%80%93state%E2%80%93action """
+        """" https://en.wikipedia.org/wiki/State%E2%80%93action%E2%80%93reward%E2%80%93state%E2%80%93action """
+
+        # error check
+        if current_color not in self.qtables:
+            print('Error: color ' + current_color + " not valid!")
+            return
+
         cur_pos = current_node.position  # current pos
         next_pos = next_node.position  # next pos
-        r = self.reward_function(reward)  # reward
+        try:
+            optimal_pos = self.node_paths[current_color][-3].position
+        except:
+            optimal_pos = self.node_paths[current_color][-2].position
 
-        if current_color == 'RED':
-            # temporal difference
-            temp_diff = (
-                    r +  # reward
-                    self.gamma *  # discount factor
-                    self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
-                    self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-            )
+        # update eligibility
+        self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += 1
 
-            # set the new q value
-            self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
+        # handle if next node(s) don't exist
+        # handle if next node(s) don't exist
+        if (next_pos[0], next_pos[1]) not in self.qtables[current_color][(cur_pos[0], cur_pos[1])]:
+            return
+        elif (optimal_pos[0], optimal_pos[1]) not in self.qtables[current_color][(cur_pos[0], cur_pos[1])]:
+            return
 
-        elif current_color == 'BLUE':
-            # temporal difference
-            temp_diff = (
-                    r +  # reward
-                    self.gamma *  # discount factor
-                    self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
-                    self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-            )
+        # temporal difference
+        temp_diff = self.get_temp_diff(
+            current_color,
+            self.reward_function(reward),
+            cur_pos,
+            next_pos,
+            optimal_pos
+        )
 
-            # set the new q value
-            self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
+        # set the new q value
+        self.qtables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += (
+                self.alpha * temp_diff
+                * self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]
+        )
 
-        elif current_color == 'GREEN':
-            # temporal difference
-            temp_diff = (
-                    r +  # reward
-                    self.gamma *  # discount factor
-                    self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
-                    self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-            )
+        # set eligibility
+        self.etables[current_color][(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] = (
+                self.gamma * self.llambda * self.etables[current_color][(cur_pos[0], cur_pos[1])][
+            (next_pos[0], next_pos[1])]
+        )
 
-            # set the new q value
-            self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
+    """ --- End Set Q ---- """
 
-        elif current_color == 'YELLOW':
-            # temporal difference
-            temp_diff = (
-                    r +  # reward
-                    self.gamma *  # discount factor
-                    self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
-                    self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-            )
+    """ Set Q Path ------------------------------------------------------------------------------------------------- """
 
-            # set the new q value
-            self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
-
-        else:
-            print('===== Error in Qtable Set========')
-    """ --- End Set Q ----- """
-
-
-
-    """ Set Q Path ----------------------------------- """
     def set_q_path(self, reward, current_color):
+
         # set new q-values for completed path
-        for i in range(len(self.node_path) - 1):
+        for i in range(len(self.node_paths[current_color]) - 1):
             # nodes
-            current_node = self.node_path[i]
-            next_node = self.node_path[i + 1]
+            current_node = self.node_paths[current_color][i]
+            next_node = self.node_paths[current_color][i + 1]
 
-            # positions
-            cur_pos = current_node.position
-            next_pos = next_node.position
+            # set q values
+            self.set_q(current_node, next_node, reward, current_color)
 
-            # reward
-            r = self.reward_function(reward)
+    """ --- End Set Q Path --- """
 
-            # temporal difference
-            if current_color == 'RED':
-                # temporal difference
-                temp_diff = (
-                        r +  # reward
-                        self.gamma *  # discount factor
-                        self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
-                        self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-                )
+    """ Find Optimal ----------------------------------------------------------------------------------------------- """
 
-                # set the new q value
-                self.qtable_red[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
-
-            elif current_color == 'BLUE':
-                # temporal difference
-                temp_diff = (
-                        r +  # reward
-                        self.gamma *  # discount factor
-                        self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
-                        self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-                )
-
-                # set the new q value
-                self.qtable_blue[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
-
-            elif current_color == 'GREEN':
-                # temporal difference
-                temp_diff = (
-                        r +  # reward
-                        self.gamma *  # discount factor
-                        self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] -  # optimal value
-                        self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-                )
-
-                # set the new q value
-                self.qtable_green[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
-
-            elif current_color == 'YELLOW':
-                # temporal difference
-                temp_diff = (
-                        r +  # reward
-                        self.gamma *  # discount factor
-                        self.qtable_yellow[(cur_pos[0], cur_pos[1])][
-                            (next_pos[0], next_pos[1])] -  # optimal value
-                        self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])]  # old value
-                )
-
-                # set the new q value
-                self.qtable_yellow[(cur_pos[0], cur_pos[1])][(next_pos[0], next_pos[1])] += self.alpha * temp_diff
-
-            else:
-                print('===== Error in Qtable Path ========')
-    """ --- End Set Q ----- """
-
-
-
-    """ Find Optimal ----------------------- """
     def find_optimal(self, cur_pos, neighbors, current_color):
+
+        # error check
+        if current_color not in self.qtables:
+            print('Error: color ' + current_color + " not valid!")
+            return
+
         optimal = np.NINF
         optimal_node = None
         for neighbor in neighbors:
             neigh_pos = neighbor.position
 
             # Q-Table Selection
-            if current_color == 'RED':
-                q = self.qtable_red[(cur_pos[0], cur_pos[1])][(neigh_pos[0], neigh_pos[1])]
-            elif current_color == 'BLUE':
-                q = self.qtable_blue[(cur_pos[0], cur_pos[1])][(neigh_pos[0], neigh_pos[1])]
-            elif current_color == 'GREEN':
-                q = self.qtable_green[(cur_pos[0], cur_pos[1])][(neigh_pos[0], neigh_pos[1])]
-            elif current_color == 'YELLOW':
-                q = self.qtable_yellow[(cur_pos[0], cur_pos[1])][(neigh_pos[0], neigh_pos[1])]
-            else:
-                print('============ Error in find Optimal =========')
+            q = self.qtables[current_color][(cur_pos[0], cur_pos[1])][(neigh_pos[0], neigh_pos[1])]
 
             # find max
             if q > optimal:
                 optimal = q
                 optimal_node = neighbor
+            elif q == optimal:
+                Rand_choices = [optimal_node, neighbor]
+                optimal_node = random.choice(Rand_choices)
 
         return optimal_node
-    """ --- End Find Optimal ---------------- """
 
-
-
-""" --- End Q Learning Agent ----------------------------------------------------- """
+    """ --- End Find Optimal --- """
