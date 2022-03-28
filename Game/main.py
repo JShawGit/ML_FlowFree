@@ -1,7 +1,8 @@
+import traceback
 import pygame
 
 from global_vars import get_val
-import tester as t
+import test_overall as t
 import qlearn_MOD as q
 import game as g
 
@@ -18,6 +19,7 @@ EPSILON   = 1.0
 GAMMA     = 0.6
 LAMBDA    = 0.6
 LOOPS     = 10000
+items = [ALPHA, EPSILON, GAMMA, LAMBDA]
 
 # tally the learning outcomes, for science
 res = {
@@ -30,7 +32,7 @@ rewards = {
     "move":       0,  # a grid space is filled
     "stuck":     -1,  # no more moves are left
     "block":    -20,  # if a path blocks another color
-    "reached": 1000,  # if a path blocks another color
+    "reached":   30,  # if a path blocks another color
     "empty":      0,  # goal is reached without filling the board
     "filled":     0,  # goal is reached, board is filled
 
@@ -149,5 +151,11 @@ def optimal_agent(agent, game):
 
 """ Run this if this file is ran """
 if __name__ == "__main__":
-    main(GAME_FILE)
+    #main(GAME_FILE)
+    try:
+        t.test_one_pair(3, [10, 100, 1000], rewards, items, "./test_results/test1_")
+    except Exception as err:
+        traceback.print_exc()
+        print("Error testing for one pair.")
+        exit(-1)
 """ --------------------------- """

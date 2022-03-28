@@ -3,7 +3,10 @@
   "width":  4,
   "height": 4,
   "colors": [
-    "RED"
+    "RED",
+    "BLUE",
+    "GREEN",
+    "YELLOW"
   ],
   "dots": [
     {

@@ -1,0 +1,20 @@
+{
+  "name": "1_2x2",
+  "width":  2,
+  "height": 2,
+  "colors": [
+    "RED"
+  ],
+  "dots": [
+    {
+      "color": "RED",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "color": "RED",
+      "x": 0,
+      "y": 1
+    }
+  ]
+}
